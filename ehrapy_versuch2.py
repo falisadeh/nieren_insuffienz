@@ -1,6 +1,8 @@
 #%%
+# %%
 import pandas as pd
 import ehrapy as ep
+import matplotlib.pyplot as plt
 
 # 1. CSV-Dateien einlesen
 df_aki = pd.read_csv("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/AKI Label.csv", sep=";")
@@ -21,7 +23,6 @@ df_age["Age_at_OP"] = (df_age["Start of surgery"] - df_age["DateOfBirth"]).dt.da
 df_age["Age_at_OP"] = df_age["Age_at_OP"].round(1)
 
 # 4. Altersgruppen-Kategorisierung
-# ✅ Alterskategorie berechnen
 def alter_kategorie(alter):
     if pd.isna(alter):
         return "Unbekannt"
@@ -41,7 +42,6 @@ def alter_kategorie(alter):
 df_age["AgeGroup"] = df_age["Age_at_OP"].apply(alter_kategorie)
 df_age["AgeGroup"] = df_age["AgeGroup"].astype("category")
 
-
 # 5. HLM-OP-Anzahl berechnen
 op_count = df_hlm.groupby("PMID").size().reset_index(name="HLM_OP_Anzahl")
 
@@ -52,84 +52,93 @@ df_aki["AKI_Stufe"] = df_aki["Decision"].apply(
 )
 
 # 7. Zusammenführen
-merged = df_age[["PMID", "Sex", "AgeGroup"]].merge(op_count, on="PMID", how="left")
+merged = df_age[["PMID", "Sex", "AgeGroup", "Age_at_OP"]].merge(op_count, on="PMID", how="left")
 merged = merged.merge(df_aki[["PMID", "AKI", "AKI_Stufe"]], on="PMID", how="left")
 
 # 8. Gruppieren auf eine Zeile pro Patient
 final_df = merged.groupby("PMID").agg({
     "Sex": "first",
     "AgeGroup": "first",
+    "Age_at_OP": "first",
     "HLM_OP_Anzahl": "sum",
     "AKI": "max",
     "AKI_Stufe": "max"
 }).reset_index()
-# Neue Spalte AgeGroup anlegen
 
+# ... (Dein Code bis zur Erstellung von final_df bleibt unverändert) ...
 
-final_df["AgeGroup"] = final_df["Age_at_OP"].apply(alter_kategorie)
-final_df["AgeGroup"] = final_df["AgeGroup"].astype("category")
+# ... (Dein Code bis zur Erstellung von final_df bleibt unverändert) ...
 
-
-final_df["AgeGroup"] = final_df["Age_at_OP"].apply(alter_kategorie)
-final_df["AgeGroup"] = final_df["AgeGroup"].astype("category")
-
-
-# Neue Spalte AgeGroup anlegen
-def alter_kategorie(alter):
-    if pd.isna(alter):
-        return "Unbekannt"
-    if alter < 1:
-        return "<1 Jahr"
-    elif alter < 2:
-        return "1–2 Jahre"
-    elif alter < 5:
-        return "2–5 Jahre"
-    elif alter < 10:
-        return "5–10 Jahre"
-    elif alter < 18:
-        return "10–18 Jahre"
-    else:
-        return "≥18 Jahre"
-
-final_df["AgeGroup"] = final_df["Age_at_OP"].apply(alter_kategorie)
-final_df["AgeGroup"] = final_df["AgeGroup"].astype("category")  # wichtig für ehrapy
-print(final_df.columns)
-print(final_df.head())
-#%%
-
-import ehrapy as ep
-
-adata = ep.io.read_csv("ehrapy_input.csv")
-print(adata.obs.columns)
-
-
+# ... (Dein Code bis zur Erstellung von final_df bleibt unverändert) ...
 
 # 9. Fehlende Werte füllen
-
 final_df["AKI"] = final_df["AKI"].fillna(0).astype(int)
 final_df["AKI_Stufe"] = final_df["AKI_Stufe"].fillna(0).astype(int)
 
-# 10. ID entfernen und speichern
+# 10. ID entfernen
 final_df = final_df.drop(columns=["PMID"])
-assert "Age_at_OP" in final_df.columns
-assert final_df["Age_at_OP"].notna().all()
 
-final_df.to_csv("ehrapy_input_grouped.csv", index=False)
-print("Spalten in .obs:", adata.obs.columns)
-print("Spalten in .X:", adata.var_names)
+# ---
 
-#%%
-# 11. In ehrapy einlesen
-adata = ep.io.read_csv("ehrapy_input_grouped.csv")
+# **Wichtige Korrektur:** Manuelle Konvertierung in AnnData
+import anndata as ad
+
+# Definiere die Spalten
+obs_cols = ['Sex', 'AgeGroup']
+var_cols = ['Age_at_OP', 'HLM_OP_Anzahl', 'AKI', 'AKI_Stufe']
+
+# Erstelle ein AnnData-Objekt
+# Die numerischen Spalten (`var_cols`) bilden die .X Matrix
+adata = ad.AnnData(
+    X=final_df[var_cols].values,
+    obs=final_df[obs_cols],
+    var=pd.DataFrame(index=var_cols)
+)
+
+# 11. Plot anzeigen
+print("Spalten in .obs nach der Konvertierung:", adata.obs.columns)
+
+if 'AgeGroup' in adata.obs.columns:
+    adata.obs["AgeGroup"].value_counts().plot(kind="bar")
+    plt.title("Verteilung der Altersgruppen bei erster OP")
+    plt.xlabel("Altersgruppe")
+    plt.ylabel("Anzahl Patienten")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+else:
+    print("Fehler: 'AgeGroup' ist nicht in adata.obs vorhanden.")
+# ... (dein bestehender Code bis zur Plot-Funktion) ...
 
 # 12. Plot anzeigen
 import matplotlib.pyplot as plt
-adata.obs["AgeGroup"].value_counts().plot(kind="bar")
-plt.title("Verteilung der Altersgruppen bei erster OP")
-plt.xlabel("Altersgruppe")
-plt.ylabel("Anzahl Patienten")
-plt.grid(True)
-plt.tight_layout()
-plt.show()
 
-# %%
+if 'AgeGroup' in adata.obs.columns:
+    # ⚠️ Wichtige Korrektur: Reihenfolge der Kategorien festlegen
+    altersgruppen_reihenfolge = [
+        "<1 Jahr",
+        "1–2 Jahre",
+        "2–5 Jahre",
+        "5–10 Jahre",
+        "10–18 Jahre",
+        "≥18 Jahre",
+        "Unbekannt"
+    ]
+    
+    # Konvertiere 'AgeGroup' in eine geordnete Kategorie
+    adata.obs["AgeGroup"] = pd.Categorical(
+        adata.obs["AgeGroup"],
+        categories=altersgruppen_reihenfolge,
+        ordered=True
+    )
+
+    # Plot erstellen
+    adata.obs["AgeGroup"].value_counts(sort=False).plot(kind="bar")
+    plt.title("Verteilung der Altersgruppen bei erster OP")
+    plt.xlabel("Altersgruppe")
+    plt.ylabel("Anzahl Patienten")
+    plt.grid(False) # ⬅️ Wichtige Korrektur: Gitterlinien entfernen
+    plt.tight_layout()
+    plt.show()
+else:
+    print("Fehler: 'AgeGroup' ist nicht in adata.obs vorhanden.")

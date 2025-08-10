@@ -531,4 +531,4 @@ x = g.get_group("f").dropna(); y = g.get_group("m").dropna()
 U, p = mannwhitneyu(x, y, alternative="two-sided")
 print(f"Mann–Whitney (f vs m): U={U:.0f}, p={p:.4g}")
 
-# %%
+

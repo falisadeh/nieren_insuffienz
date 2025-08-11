@@ -661,47 +661,45 @@ def _run_groupkfold_cv(df, save_dir, n_splits=5):
     pd.DataFrame([metrics]).to_csv(os.path.join(save_dir,"S4_cv_metrics.csv"), index=False)
     print(f"CV-Metriken: ROC_AUC={roc_auc:.3f}, PR_AUC={pr_auc:.3f}, Brier={brier:.3f}")
     return metrics
+
 def main_s4():
     """S4 ausführen und Ergebnisse in adata.uns ablegen (nur einfache Typen)."""
     from anndata import read_h5ad
-    import pandas as pd
-
+    # CFG kommt aus deinem bestehenden Skript (S1/S2)
     h5 = CFG.OUT_H5AD if hasattr(CFG, "OUT_H5AD") else CFG.PATH_H5AD
     adata = read_h5ad(h5)
-
-    # Basis-DF
+   # 1) Daten vorbereiten und Modelle rechnen
     df = _prepare_model_df(adata)
-
-    # GLM (ohne Interaktion), CV, Standard-Plots
     or_csv = _fit_glm_clustered(df, CFG.SAVE_DIR)
     metrics = _run_groupkfold_cv(df, CFG.SAVE_DIR, n_splits=5)
-    s4_plot_forest(or_csv, CFG.SAVE_DIR)
-    s4_plot_margins_duration(df, CFG.SAVE_DIR)
-    s4_plot_margins_duration_by_reop(df, CFG.SAVE_DIR)
 
-    # Interaktionsanalyse + Plot
-    inter = _fit_glm_clustered_interaction(df, CFG.SAVE_DIR)
-    inter_png = s4_plot_margins_duration_by_reop_interaction(df, CFG.SAVE_DIR)
+    # 2) Visualisierungen HIER aufrufen (brauchen 'or_csv' und 'df')
+    try:
+        forest_png = s4_plot_forest(or_csv, CFG.SAVE_DIR)
+    except Exception as e:
+        print("Forest-Plot Fehler:", e); forest_png = ""
+    try:
+        margins_png = s4_plot_margins_duration(df, CFG.SAVE_DIR)
+    except Exception as e:
+        print("Margins-Plot Fehler:", e); margins_png = ""
 
-    # in uns referenzieren
+    # 3) nur einfache Typen in uns (H5AD-sicher)
     try:
         k_terms = int(len(pd.read_csv(or_csv)))
     except Exception:
         k_terms = 0
     adata.uns["S4_glm"] = {
         "or_table_path": or_csv,
-        "forest_path": os.path.join(CFG.SAVE_DIR, "S4_forest_or.png"),
-        "margins_duration_path": os.path.join(CFG.SAVE_DIR, "S4_margins_duration.png"),
-        "margins_by_reop_path": os.path.join(CFG.SAVE_DIR, "S4_margins_duration_by_reop.png"),
+        "forest_path": forest_png,
+        "margins_duration_path": margins_png,
         "n": int(df.shape[0]),
         "k": k_terms
     }
-    adata.uns["S4_interaction"] = {**inter, "margins_path": inter_png}
     adata.uns["S4_cv"] = metrics
 
+    # 4) speichern
     adata.write_h5ad(h5)
     print(f"AnnData (S4) gespeichert: {h5}")
-
         # Visualisierungen
     s4_plot_forest(or_csv, CFG.SAVE_DIR)
     s4_plot_margins_duration(df, CFG.SAVE_DIR)
@@ -867,29 +865,6 @@ def s4_plot_margins_duration_by_reop(df: pd.DataFrame, save_dir: str) -> str:
     print("Margins (Erst-OP vs. Re-OP) gespeichert:", out)
     return out
 
-import os
-import numpy as np
-from anndata import read_h5ad
-from ehrapy import load_adata, define_event_index_on_adata, build_survival
-import platform, sys, pandas as pd
-import ehrapy as ep
-try:
-    import ehrapy as ep; ep_ver = ep.__version__
-except Exception:
-    ep_ver = "nicht importiert"
-adata.uns["provenance"] = {
-    "framework": "ehrapy-first (AnnData/H5AD)",
-    "versions": {
-        "python": platform.python_version(),
-        "ehrapy": ep_ver,
-        "pandas": pd.__version__,
-        "statsmodels": __import__("statsmodels").__version__,
-        "sklearn": __import__("sklearn").__version__,
-    },
-    "stages": ["S1 Survival-Setup", "S2 Table1", "S3 Table1-Stats", "S4 GLM+CV+Plots"]
-}
-
-
 
 
 
@@ -904,132 +879,3 @@ if __name__ == "__main__":
     
 
 # %%
-
-# ========= S4: Interaktion Dauer × Re-OP =========
-def _fit_glm_clustered_interaction(df: pd.DataFrame, save_dir: str) -> dict:
-    """GLM (Logit) mit Interaktion duration_hours * is_reop; cluster-robuste SE (Cluster=PMID)."""
-    import statsmodels.api as sm
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Daten
-    y = pd.to_numeric(df["event_idx"], errors="coerce").astype(int).values
-    groups = df["PMID"].astype("category").cat.codes.to_numpy()
-
-    X = df[["duration_hours","is_reop","Sex_norm"]].copy()
-    X["duration_hours"] = pd.to_numeric(X["duration_hours"], errors="coerce").fillna(X["duration_hours"].median())
-    X["is_reop"] = pd.to_numeric(X["is_reop"], errors="coerce").fillna(0).astype(int)
-    X["Sex_norm"] = X["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan}).fillna("Missing")
-
-    # Dummies + Interaktion
-    dm = pd.get_dummies(X[["Sex_norm"]], drop_first=True).astype(float)
-    Xdm = pd.concat([X[["duration_hours","is_reop"]].astype(float), dm], axis=1)
-    Xdm["duration_hours:is_reop"] = Xdm["duration_hours"] * Xdm["is_reop"]
-    Xdm = Xdm.apply(pd.to_numeric, errors="coerce").replace([np.inf,-np.inf], np.nan).fillna(0.0).astype(np.float64)
-    Xdm = sm.add_constant(Xdm, has_constant="add")
-
-    model = sm.GLM(y, Xdm.values, family=sm.families.Binomial())
-    res = model.fit(cov_type="cluster", cov_kwds={"groups": groups, "use_correction": True})
-
-    # OR-Tabelle
-    terms = list(Xdm.columns)
-    b, se, z, p = res.params, res.bse, res.tvalues, res.pvalues
-    ci_lo, ci_hi = b - 1.96*se, b + 1.96*se
-    or_tab = pd.DataFrame({
-        "Term": terms, "Coef": b, "OR": np.exp(b),
-        "CI_low": np.exp(ci_lo), "CI_high": np.exp(ci_hi),
-        "z": z, "p": p
-    })
-    intercept = or_tab[or_tab["Term"]=="const"]; body = or_tab[or_tab["Term"]!="const"].sort_values("Term")
-    or_tab = pd.concat([intercept, body], axis=0) if not intercept.empty else body
-    or_csv = os.path.join(save_dir, "S4_glm_interaction_or.csv")
-    or_tab.to_csv(or_csv, index=False)
-
-    # Abgeleitete Steigungen (Delta-Methode)
-    cov = res.cov_params()
-    idx_d = terms.index("duration_hours")
-    idx_i = terms.index("duration_hours:is_reop")
-    beta_d = float(b[idx_d]); var_d = float(cov[idx_d, idx_d])
-    beta_i = float(b[idx_i]); var_i = float(cov[idx_i, idx_i])
-    cov_di = float(cov[idx_d, idx_i])
-
-    # Erst-OP
-    or_erst = np.exp(beta_d)
-    se_erst = np.sqrt(max(var_d, 0.0))
-    ci_erst = (np.exp(beta_d - 1.96*se_erst), np.exp(beta_d + 1.96*se_erst))
-    # Re-OP
-    beta_sum = beta_d + beta_i
-    var_sum  = max(var_d + var_i + 2.0*cov_di, 0.0)
-    se_sum   = np.sqrt(var_sum)
-    or_reop  = np.exp(beta_sum)
-    ci_reop  = (np.exp(beta_sum - 1.96*se_sum), np.exp(beta_sum + 1.96*se_sum))
-    slopes = pd.DataFrame([
-        {"Gruppe":"Erst-OP", "OR_pro_Stunde": or_erst, "CI_low": ci_erst[0], "CI_high": ci_erst[1]},
-        {"Gruppe":"Re-OP",   "OR_pro_Stunde": or_reop, "CI_low": ci_reop[0], "CI_high": ci_reop[1]},
-    ])
-    slopes_csv = os.path.join(save_dir, "S4_glm_interaction_slopes_by_group.csv")
-    slopes.to_csv(slopes_csv, index=False)
-
-    out = {
-        "or_table_path": or_csv,
-        "slopes_path": slopes_csv,
-        "p_interaction": float(p[terms.index("duration_hours:is_reop")])
-    }
-    print("Interaktions-GLM gespeichert:", or_csv, "| slopes:", slopes_csv, "| p_interaction=", out["p_interaction"])
-    return out
-
-
-def s4_plot_margins_duration_by_reop_interaction(df: pd.DataFrame, save_dir: str) -> str:
-    """Plot p(AKI) ~ Dauer für Erst-OP vs. Re-OP aus dem Interaktionsmodell."""
-    import statsmodels.api as sm
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Daten
-    X = df[["duration_hours","is_reop","Sex_norm"]].copy()
-    X["duration_hours"] = pd.to_numeric(X["duration_hours"], errors="coerce").fillna(X["duration_hours"].median())
-    X["is_reop"] = pd.to_numeric(X["is_reop"], errors="coerce").fillna(0).astype(int)
-    X["Sex_norm"] = X["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan}).fillna("Missing")
-
-    dm = pd.get_dummies(X[["Sex_norm"]], drop_first=True).astype(float)
-    Xdm = pd.concat([X[["duration_hours","is_reop"]].astype(float), dm], axis=1)
-    Xdm["duration_hours:is_reop"] = Xdm["duration_hours"] * Xdm["is_reop"]
-    Xdm = Xdm.apply(pd.to_numeric, errors="coerce").replace([np.inf,-np.inf], np.nan).fillna(0.0).astype(np.float64)
-    Xdm = sm.add_constant(Xdm, has_constant="add")
-
-    y = pd.to_numeric(df["event_idx"], errors="coerce").astype(int).values
-    groups = df["PMID"].astype("category").cat.codes.to_numpy()
-
-    model = sm.GLM(y, Xdm.values, family=sm.families.Binomial())
-    res = model.fit(cov_type="cluster", cov_kwds={"groups": groups, "use_correction": True})
-    params = res.params; cov = res.cov_params()
-
-    # Grid
-    q = X["duration_hours"].quantile([0.05,0.95]).values
-    grid = np.linspace(q[0], q[1], 80)
-    cols = list(Xdm.columns)
-
-    def pred_curve(is_reop_val: int):
-        Xg = pd.DataFrame(0.0, index=np.arange(len(grid)), columns=cols, dtype=np.float64)
-        Xg["const"] = 1.0
-        Xg["duration_hours"] = grid
-        Xg["is_reop"] = float(is_reop_val)
-        Xg["duration_hours:is_reop"] = grid * float(is_reop_val)
-        M = Xg.values
-        eta = M @ params
-        var = np.einsum("ij,jk,ik->i", M, cov, M)
-        se = np.sqrt(np.clip(var, 0, np.inf))
-        inv = lambda z: 1/(1+np.exp(-z))
-        return inv(eta), inv(eta-1.96*se), inv(eta+1.96*se)
-
-    p0, l0, h0 = pred_curve(0)
-    p1, l1, h1 = pred_curve(1)
-
-    plt.figure(figsize=(7,5))
-    plt.plot(grid, p0, label="Erst-OP"); plt.fill_between(grid, l0, h0, alpha=0.15)
-    plt.plot(grid, p1, label="Re-OP");  plt.fill_between(grid, l1, h1, alpha=0.15)
-    plt.xlabel("OP-Dauer (Stunden)"); plt.ylabel("Prädizierte AKI-Wahrscheinlichkeit (0–7 Tage)")
-    plt.title("S4 – Marginaleffekte (Interaktionsmodell)")
-    plt.legend(); plt.tight_layout()
-    out = os.path.join(save_dir, "S4_margins_duration_by_reop_INTERACTION.png")
-    plt.savefig(out, dpi=150); plt.close()
-    print("Interaktions-Margins gespeichert:", out)
-    return out

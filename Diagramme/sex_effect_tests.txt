@@ -1,0 +1,4 @@
+n=1209
+Haupteffekt Geschlecht (LRT): LR=0.76, p=0.382
+Haupteffekt Geschlecht (Wald in m1): p=0.377
+Interaktion Geschlecht×Alter (LRT): LR=3.99, p=0.4079

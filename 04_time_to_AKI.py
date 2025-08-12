@@ -264,6 +264,18 @@ def plot_km_and_cuminc(surv: pd.DataFrame, save_dir: str) -> Tuple[str, str]:
     plt.tight_layout(); plt.savefig(ci_path, dpi=150); plt.close()
 
     return km_path, ci_path
+# nachdem 'adata' in S1/S2 fertig konstruiert ist, vor adata.write_h5ad(...):
+try:
+    from anndata import read_h5ad
+    old_h5 = CFG.OUT_H5AD if hasattr(CFG, "OUT_H5AD") else CFG.PATH_H5AD
+    if os.path.exists(old_h5):
+        ad_old = read_h5ad(old_h5)
+        for col in ["age_years_at_op", "age_years_at_aki", "age_cat_op"]:
+            if col in getattr(ad_old, "obs", pd.DataFrame()).columns and col not in adata.obs.columns:
+                adata.obs[col] = ad_old.obs.reindex(adata.obs.index)[col]
+                print(f"[INFO] Spalte aus altem H5 übernommen: {col}")
+except Exception as e:
+    print(f"[WARN] Konnte alte Alters-Spalten nicht übernehmen: {e}")
 
 
 # ---------------------------------
@@ -412,6 +424,50 @@ def make_table1_op_level(surv: pd.DataFrame, save_dir: str) -> str:
     csv_path = os.path.join(save_dir, "table1_op_level.csv")
     out.to_csv(csv_path, index=False)
     return csv_path
+#-----------------------------
+def carry_over_age_cols(adata, old_h5_path, id_col="PMID",
+                        cols=("age_years_at_op", "age_years_at_aki", "age_cat_op")) -> int:
+    """
+    Übernimmt Alters-Spalten aus einem bereits existierenden H5AD.
+    - Bevorzugt Join über PMID; fällt sonst auf Index-Reindex zurück.
+    - Ergänzt fehlende Spalten/Values in adata.obs.
+    """
+    import os
+    import pandas as pd
+    from anndata import read_h5ad
+
+    if not os.path.exists(old_h5_path):
+        return 0
+
+    ad_old = read_h5ad(old_h5_path)
+    n_set = 0
+
+    # 1) Falls beide Daten PMID haben -> Merge über PMID
+    if (id_col in adata.obs.columns) and (id_col in ad_old.obs.columns):
+        left  = adata.obs[[id_col]].copy()
+        right = ad_old.obs[[id_col] + [c for c in cols if c in ad_old.obs.columns]].drop_duplicates(id_col)
+        merged = left.merge(right, how="left", on=id_col)
+        merged.index = adata.obs.index  # gleiche Reihenfolge wie adata
+
+        for c in cols:
+            if c in merged.columns:
+                if c not in adata.obs.columns:
+                    adata.obs[c] = merged[c]
+                else:
+                    adata.obs[c] = adata.obs[c].combine_first(merged[c])
+                n_set += int(adata.obs[c].notna().sum())
+        return n_set
+
+    # 2) Sonst: Versuch per Index-Reindex
+    for c in cols:
+        if c in ad_old.obs.columns:
+            if c not in adata.obs.columns:
+                adata.obs[c] = ad_old.obs.reindex(adata.obs.index)[c]
+            else:
+                adata.obs[c] = adata.obs[c].combine_first(ad_old.obs.reindex(adata.obs.index)[c])
+            n_set += int(adata.obs[c].notna().sum())
+
+    return n_set
 
 
 # ---------------------------------
@@ -437,6 +493,22 @@ def main():
     # E) Plots
     km_path, ci_path = plot_km_and_cuminc(surv, CFG.SAVE_DIR)
     print(f"Plots gespeichert: {km_path} | {ci_path}")
+# REMOVED_TOPLEVEL_CARRYOVER: # nachdem 'adata' in S1/S2 fertig konstruiert ist, vor adata.write_h5ad(...):
+# REMOVED_TOPLEVEL_CARRYOVER: try:
+# REMOVED_TOPLEVEL_CARRYOVER:     from anndata import read_h5ad
+# REMOVED_TOPLEVEL_CARRYOVER:     old_h5 = CFG.OUT_H5AD if hasattr(CFG, "OUT_H5AD") else CFG.PATH_H5AD
+# REMOVED_TOPLEVEL_CARRYOVER:     if os.path.exists(old_h5):
+# REMOVED_TOPLEVEL_CARRYOVER:         ad_old = read_h5ad(old_h5)
+# REMOVED_TOPLEVEL_CARRYOVER:         for col in ["age_years_at_op", "age_years_at_aki", "age_cat_op"]:
+# REMOVED_TOPLEVEL_CARRYOVER:             if col in getattr(ad_old, "obs", pd.DataFrame()).columns and col not in adata.obs.columns:
+# REMOVED_TOPLEVEL_CARRYOVER:                 adata.obs[col] = ad_old.obs.reindex(adata.obs.index)[col]
+# REMOVED_TOPLEVEL_CARRYOVER:                 print(f"[INFO] Spalte aus altem H5 übernommen: {col}")
+# REMOVED_TOPLEVEL_CARRYOVER: except Exception as e:
+# REMOVED_TOPLEVEL_CARRYOVER:     print(f"[WARN] Konnte alte Alters-Spalten nicht übernehmen: {e}")
+
+
+
+
 
     # F) Versionierte H5AD-Datei als S1 persistieren (ehrapy/AnnData)
     adata.write_h5ad(CFG.OUT_H5AD)
@@ -502,8 +574,64 @@ def main_s2():
     # Speichern (gleicher OUT-Pfad, aktualisierte obs)
     adata.write_h5ad(CFG.OUT_H5AD)
     print(f"AnnData (S1+S2) gespeichert: {CFG.OUT_H5AD}")
+# --------------------------------- Alter Features (S3) ---------------------------------
+def add_age_features(adata, dob_candidates=("Birth_Date", "DOB", "Geburtsdatum")):
+    """
+    Berechnet:
+      - age_years_at_op  : Alter (Jahre) zum OP-Zeitpunkt
+      - age_years_at_aki : Alter (Jahre) zum AKI-Zeitpunkt (falls AKI_Start vorhanden)
+      - age_cat_op       : klinisch sinnvolle Alterskategorien zum OP-Zeitpunkt
+    Schreibt die Felder in adata.obs (ehrapy-first).
+    """
+    import numpy as np, pandas as pd
 
+    # 1) Spalten finden
+    dob_col = None
+    for c in dob_candidates:
+        if c in adata.obs.columns:
+            dob_col = c
+            break
+    if dob_col is None:
+        print("WARN: Kein Geburtsdatum gefunden – überspringe age-Features.")
+        return adata
 
+    # 2) Datumsfelder zu Timestamps machen (Anonymisierung egal -> es zählt die Differenz)
+    for c in [dob_col, "Surgery_Start", "AKI_Start"]:
+        if c in adata.obs.columns:
+            adata.obs[c] = pd.to_datetime(adata.obs[c], errors="coerce")
+
+    # 3) Alter in Jahren berechnen (OP & AKI)
+    sec_per_year = 365.25 * 24 * 3600
+    adata.obs["age_years_at_op"]  = (adata.obs["Surgery_Start"] - adata.obs[dob_col]).dt.total_seconds() / sec_per_year
+    if "AKI_Start" in adata.obs:
+        adata.obs["age_years_at_aki"] = (adata.obs["AKI_Start"] - adata.obs[dob_col]).dt.total_seconds() / sec_per_year
+
+    # 4) Plausibilitätscheck für Pädiatrie (negativ oder > 21 Jahre -> auf NaN setzen)
+    mask_bad = (adata.obs["age_years_at_op"] < 0) | (adata.obs["age_years_at_op"] > 21)
+    adata.obs.loc[mask_bad, "age_years_at_op"] = np.nan
+    if "age_years_at_aki" in adata.obs:
+        mask_bad2 = (adata.obs["age_years_at_aki"] < 0) | (adata.obs["age_years_at_aki"] > 21)
+        adata.obs.loc[mask_bad2, "age_years_at_aki"] = np.nan
+
+    # 5) Klinische Kategorien (Beispiel; gern anpassen)
+    bins   = [-np.inf, 1, 5, 12, 18, np.inf]
+    labels = ["<1 J", "1–4 J", "5–11 J", "12–17 J", "≥18 J"]
+    adata.obs["age_cat_op"] = pd.Categorical(pd.cut(adata.obs["age_years_at_op"], bins=bins, labels=labels, right=False))
+
+    # 6) Kurz-Report
+    print("AGE: n_valid_op =", int(adata.obs["age_years_at_op"].notna().sum()),
+          "| median =", round(float(adata.obs["age_years_at_op"].median(skipna=True)), 2))
+
+    # 7) Doku ins uns (nur einfache Typen)
+    meta = {
+        "dob_col": dob_col,
+        "age_years_at_op_desc": "Alter in Jahren zur Operation (aus DOB & Surgery_Start)",
+        "age_years_at_aki_desc": "Alter in Jahren zum AKI-Beginn (falls AKI_Start vorhanden)",
+        "age_cat_op_bins": bins,
+        "age_cat_op_labels": labels,
+    }
+    adata.uns["age_features"] = meta
+    return adata
 
 
 
@@ -525,65 +653,79 @@ import os
 import matplotlib.pyplot as plt
 
 def _prepare_model_df(adata):
-    """Baut den Modell-DataFrame (OP-basiert)."""
-    need = ["PMID","event_idx","duration_hours","is_reop","Sex_norm"]
-    for c in need:
-        if c not in adata.obs.columns:
-            adata.obs[c] = np.nan
-    df = adata.obs[need].copy()
+    import numpy as np, pandas as pd
+    base = ["PMID","event_idx","duration_hours","is_reop","Sex_norm"]
+    extra = []
+    if "age_years_at_op" in adata.obs.columns:
+        extra.append("age_years_at_op")
 
-    # strikte Typen
+    cols = [c for c in (base + extra) if c in adata.obs.columns]
+    df = adata.obs[cols].copy()
+
+    # Typen
     df["event_idx"] = pd.to_numeric(df["event_idx"], errors="coerce").astype("Int64")
     df = df[df["event_idx"].notna() & df["PMID"].notna()].copy()
     df["event_idx"] = df["event_idx"].astype(int)
+
     df["duration_hours"] = pd.to_numeric(df["duration_hours"], errors="coerce")
     df["is_reop"] = pd.to_numeric(df["is_reop"], errors="coerce").fillna(0).astype(int)
-    df["Sex_norm"] = df["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan}).fillna("Missing")
-    return df
+    df["Sex_norm"] = df["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan})
 
+    if "age_years_at_op" in df.columns:
+        df["age_years_at_op"] = pd.to_numeric(df["age_years_at_op"], errors="coerce")
+
+    return df
 def _fit_glm_clustered(df, save_dir):
     """GLM (Binomial Logit) + cluster-robuste SE (Cluster=PMID). Speichert OR-Tabelle."""
-    # imports lokal, damit Skript auch ohne S4-Pakete lauffähig bleibt
+    import os
+    import numpy as np
+    import pandas as pd
     import statsmodels.api as sm
 
+    # Zielvariable
     y = pd.to_numeric(df["event_idx"], errors="coerce").astype(int).values
 
-    X = df[["duration_hours","is_reop","Sex_norm"]].copy()
-    X["duration_hours"] = pd.to_numeric(X["duration_hours"], errors="coerce").fillna(X["duration_hours"].median())
-    X["is_reop"] = pd.to_numeric(X["is_reop"], errors="coerce").fillna(0).astype(int)
+    # Features dynamisch (Alter nur, wenn vorhanden)
+    feats = ["duration_hours", "is_reop", "Sex_norm"]
+    if "age_years_at_op" in df.columns:
+        feats.append("age_years_at_op")
+
+    X = df[feats].copy()
+    X["duration_hours"] = X["duration_hours"].fillna(X["duration_hours"].median())
+    X["is_reop"] = X["is_reop"].fillna(0).astype(int)
     X["Sex_norm"] = X["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan}).fillna("Missing")
+    if "age_years_at_op" in X.columns:
+        X["age_years_at_op"] = pd.to_numeric(X["age_years_at_op"], errors="coerce")
+        X["age_years_at_op"] = X["age_years_at_op"].fillna(X["age_years_at_op"].median())
 
-    # One-Hot für Sex, dann konsequent numerisch
+    # One-Hot für Sex_norm
     X_dm = pd.get_dummies(X, columns=["Sex_norm"], drop_first=True)
-    X_dm = X_dm.apply(pd.to_numeric, errors="coerce").replace([np.inf,-np.inf], np.nan).fillna(0.0).astype(np.float64)
+    X_dm = (X_dm
+            .apply(pd.to_numeric, errors="coerce")
+            .replace([np.inf, -np.inf], np.nan)
+            .fillna(0.0)
+            .astype(np.float64))
 
-    # Konstante & als NumPy
+    # Konstante hinzufügen
     X_dm = sm.add_constant(X_dm, has_constant="add")
-    X_mat = np.asarray(X_dm.values, dtype=np.float64)
-    y_vec = np.asarray(y, dtype=np.float64)
 
-    model = sm.GLM(y_vec, X_mat, family=sm.families.Binomial())
-    # Cluster-Gruppen als Codes (PMID -> int)
+    # Cluster-Codes (PMID)
     groups = df["PMID"].astype("category").cat.codes.to_numpy()
-    # <<< NEU: robust schon beim Fit >>>
-    res = model.fit(
-    cov_type="cluster",
-    cov_kwds={"groups": groups, "use_correction": True}
-    )
 
-    # Cluster-Gruppen als Codes
-    groups = df["PMID"].astype("category").cat.codes.to_numpy()
-  
+    # GLM fitten – direkt mit cluster-robuster Kovarianz
+    model = sm.GLM(y, X_dm.values, family=sm.families.Binomial())
+    res = model.fit(cov_type="cluster", cov_kwds={"groups": groups, "use_correction": True})
+
+    # OR-Tabelle
     params = res.params
     se     = res.bse
     z      = res.tvalues
     p      = res.pvalues
     ci_lo  = params - 1.96 * se
     ci_hi  = params + 1.96 * se
-    
 
     terms = list(X_dm.columns)
-    or_tab = pd.DataFrame({
+    out = pd.DataFrame({
         "Term": terms,
         "Coef": params,
         "OR": np.exp(params),
@@ -593,9 +735,9 @@ def _fit_glm_clustered(df, save_dir):
         "p": p,
     })
 
-    # Intercept zuerst
-    intercept = or_tab[or_tab["Term"]=="const"]
-    body = or_tab[or_tab["Term"]!="const"].sort_values("Term")
+    # Intercept nach oben sortieren
+    intercept = out[out["Term"] == "const"]
+    body = out[out["Term"] != "const"].sort_values("Term")
     out = pd.concat([intercept, body], axis=0) if not intercept.empty else body
 
     os.makedirs(save_dir, exist_ok=True)
@@ -603,9 +745,12 @@ def _fit_glm_clustered(df, save_dir):
     out.to_csv(path, index=False)
     print("GLM (cluster-robust) OR-Tabelle gespeichert:", path)
     return path
-
 def _run_groupkfold_cv(df, save_dir, n_splits=5):
     """GroupKFold (Gruppen=PMID) – ROC/PR/Kalibration + Metriken."""
+    import os
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
     from sklearn.model_selection import GroupKFold
     from sklearn.impute import SimpleImputer
     from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -617,294 +762,225 @@ def _run_groupkfold_cv(df, save_dir, n_splits=5):
 
     y = df["event_idx"].values
     groups = df["PMID"].values
-    X = df[["duration_hours","is_reop","Sex_norm"]]
 
-    num_feats = ["duration_hours","is_reop"]
-    cat_feats = ["Sex_norm"]
+    feats = ["duration_hours", "is_reop", "Sex_norm"]
+    if "age_years_at_op" in df.columns:
+        feats.append("age_years_at_op")
+    X = df[feats].copy()
+
+    num_feats = ["duration_hours", "is_reop"]
+    if "age_years_at_op" in X.columns:
+        num_feats.append("age_years_at_op")
+    cat_feats = ["Sex_norm"]  # ← wichtig
 
     pre = ColumnTransformer([
-        ("num", Pipeline([("imp", SimpleImputer(strategy="median")),("sc", StandardScaler())]), num_feats),
-        ("cat", Pipeline([("imp", SimpleImputer(strategy="most_frequent")),("oh", OneHotEncoder(handle_unknown="ignore"))]), cat_feats)
+        ("num", Pipeline([
+            ("imp", SimpleImputer(strategy="median")),
+            ("sc", StandardScaler())
+        ]), num_feats),
+        ("cat", Pipeline([
+            ("imp", SimpleImputer(strategy="most_frequent")),
+            ("oh", OneHotEncoder(handle_unknown="ignore"))
+        ]), cat_feats)
     ])
 
-    clf = Pipeline([("pre", pre), ("lr", LogisticRegression(max_iter=200, class_weight="balanced", solver="lbfgs"))])
+    clf = Pipeline([
+        ("pre", pre),
+        ("lr", LogisticRegression(max_iter=200, class_weight="balanced", solver="lbfgs"))
+    ])
 
     gkf = GroupKFold(n_splits=min(n_splits, len(np.unique(groups))))
     proba = np.empty_like(y, dtype=float)
 
-    for i,(tr,te) in enumerate(gkf.split(X, y, groups),1):
+    for i, (tr, te) in enumerate(gkf.split(X, y, groups), 1):
         clf.fit(X.iloc[tr], y[tr])
-        proba[te] = clf.predict_proba(X.iloc[te])[:,1]
+        proba[te] = clf.predict_proba(X.iloc[te])[:, 1]
         print(f"Fold {i} train={len(tr)} test={len(te)}")
 
     # Kennzahlen
-    from sklearn.metrics import roc_auc_score, average_precision_score, brier_score_loss
     roc_auc = roc_auc_score(y, proba)
     pr_auc = average_precision_score(y, proba)
     brier = brier_score_loss(y, proba)
 
     # Plots
-    fpr,tpr,_ = roc_curve(y, proba)
-    plt.figure(figsize=(6,5)); plt.plot(fpr,tpr); plt.plot([0,1],[0,1],'--'); plt.xlabel("FPR"); plt.ylabel("TPR"); plt.title("S4 ROC (GroupKFold)"); plt.tight_layout()
-    roc_path = os.path.join(save_dir,"S4_ROC.png"); plt.savefig(roc_path,dpi=150); plt.close()
+    fpr, tpr, _ = roc_curve(y, proba)
+    plt.figure(figsize=(6,5)); plt.plot(fpr, tpr); plt.plot([0,1],[0,1],'--'); plt.xlabel("FPR"); plt.ylabel("TPR"); plt.title("S4 ROC (GroupKFold)"); plt.tight_layout()
+    roc_path = os.path.join(save_dir, "S4_ROC.png"); plt.savefig(roc_path, dpi=150); plt.close()
 
-    prec,rec,_ = precision_recall_curve(y, proba)
-    plt.figure(figsize=(6,5)); plt.plot(rec,prec); plt.xlabel("Recall"); plt.ylabel("Precision"); plt.title("S4 Precision-Recall (GroupKFold)"); plt.tight_layout()
-    pr_path = os.path.join(save_dir,"S4_PR.png"); plt.savefig(pr_path,dpi=150); plt.close()
+    prec, rec, _ = precision_recall_curve(y, proba)
+    plt.figure(figsize=(6,5)); plt.plot(rec, prec); plt.xlabel("Recall"); plt.ylabel("Precision"); plt.title("S4 Precision-Recall (GroupKFold)"); plt.tight_layout()
+    pr_path = os.path.join(save_dir, "S4_PR.png"); plt.savefig(pr_path, dpi=150); plt.close()
 
     prob_true, prob_pred = calibration_curve(y, proba, n_bins=10, strategy="quantile")
     plt.figure(figsize=(6,5)); plt.plot(prob_pred, prob_true); plt.plot([0,1],[0,1],'--'); plt.xlabel("Vorhergesagte Wahrscheinlichkeit"); plt.ylabel("Beobachteter Anteil"); plt.title("S4 Kalibration (GroupKFold)"); plt.tight_layout()
-    cal_path = os.path.join(save_dir,"S4_Calibration.png"); plt.savefig(cal_path,dpi=150); plt.close()
+    cal_path = os.path.join(save_dir, "S4_Calibration.png"); plt.savefig(cal_path, dpi=150); plt.close()
 
     metrics = {"roc_auc": float(roc_auc), "pr_auc": float(pr_auc), "brier": float(brier),
                "roc_path": roc_path, "pr_path": pr_path, "calibration_path": cal_path}
-    pd.DataFrame([metrics]).to_csv(os.path.join(save_dir,"S4_cv_metrics.csv"), index=False)
+    pd.DataFrame([metrics]).to_csv(os.path.join(save_dir, "S4_cv_metrics.csv"), index=False)
     print(f"CV-Metriken: ROC_AUC={roc_auc:.3f}, PR_AUC={pr_auc:.3f}, Brier={brier:.3f}")
     return metrics
-def main_s4():
-    """S4 ausführen und Ergebnisse in adata.uns ablegen (nur einfache Typen)."""
-    from anndata import read_h5ad
-    import pandas as pd
 
-    h5 = CFG.OUT_H5AD if hasattr(CFG, "OUT_H5AD") else CFG.PATH_H5AD
-    adata = read_h5ad(h5)
+# ---------------------------------
+def _fit_glm_clustered_interaction(df, save_dir):
+    """
+    GLM mit Interaktion: duration_hours × is_reop (cluster-robuste SE, Cluster=PMID).
+    Speichert:
+      - S4_glm_interaction_or.csv      (OR & 95%-KI für alle Terme)
+      - S4_glm_interaction_slopes_by_group.csv  (Steigung der Dauer je Gruppe als OR/h)
+    """
+    import os, numpy as np, pandas as pd, statsmodels.api as sm
 
-    # Basis-DF
-    df = _prepare_model_df(adata)
+    # Ziel
+    y = pd.to_numeric(df["event_idx"], errors="coerce").astype(int).values
 
-    # GLM (ohne Interaktion), CV, Standard-Plots
-    or_csv = _fit_glm_clustered(df, CFG.SAVE_DIR)
-    metrics = _run_groupkfold_cv(df, CFG.SAVE_DIR, n_splits=5)
-    s4_plot_forest(or_csv, CFG.SAVE_DIR)
-    s4_plot_margins_duration(df, CFG.SAVE_DIR)
-    s4_plot_margins_duration_by_reop(df, CFG.SAVE_DIR)
+    # Basisfeatures
+    feats = ["duration_hours", "is_reop", "Sex_norm"]
+    if "age_years_at_op" in df.columns:
+        feats.append("age_years_at_op")
 
-    # Interaktionsanalyse + Plot
-    inter = _fit_glm_clustered_interaction(df, CFG.SAVE_DIR)
-    inter_png = s4_plot_margins_duration_by_reop_interaction(df, CFG.SAVE_DIR)
+    X = df[feats].copy()
+    X["duration_hours"] = pd.to_numeric(X["duration_hours"], errors="coerce").fillna(X["duration_hours"].median())
+    X["is_reop"]        = pd.to_numeric(X["is_reop"], errors="coerce").fillna(0).astype(int)
+    X["Sex_norm"]       = X["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan}).fillna("Missing")
+    if "age_years_at_op" in X.columns:
+        X["age_years_at_op"] = pd.to_numeric(X["age_years_at_op"], errors="coerce").fillna(X["age_years_at_op"].median())
 
-    # in uns referenzieren
-    try:
-        k_terms = int(len(pd.read_csv(or_csv)))
-    except Exception:
-        k_terms = 0
-    adata.uns["S4_glm"] = {
-        "or_table_path": or_csv,
-        "forest_path": os.path.join(CFG.SAVE_DIR, "S4_forest_or.png"),
-        "margins_duration_path": os.path.join(CFG.SAVE_DIR, "S4_margins_duration.png"),
-        "margins_by_reop_path": os.path.join(CFG.SAVE_DIR, "S4_margins_duration_by_reop.png"),
-        "n": int(df.shape[0]),
-        "k": k_terms
-    }
-    adata.uns["S4_interaction"] = {**inter, "margins_path": inter_png}
-    adata.uns["S4_cv"] = metrics
+    # Interaktion
+    X["duration_x_reop"] = X["duration_hours"] * X["is_reop"]
 
-    adata.write_h5ad(h5)
-    print(f"AnnData (S4) gespeichert: {h5}")
-
-        # Visualisierungen
-    s4_plot_forest(or_csv, CFG.SAVE_DIR)
-    s4_plot_margins_duration(df, CFG.SAVE_DIR)
-    s4_plot_margins_duration_by_reop(df, CFG.SAVE_DIR)   # ← neu
-
-    # ===== S4: Visualisierungen =====
-import matplotlib.pyplot as plt
-
-def s4_plot_forest(or_csv_path: str, save_dir: str) -> str:
-    """Forest-Plot für ORs (exkl. Intercept)."""
-    import pandas as pd, numpy as np, os
-    df = pd.read_csv(or_csv_path)
-    df = df[df["Term"] != "const"].copy()
-    if df.empty:
-        return ""
-    # Sortierung: erst binär/kategorial, dann kontinuierlich (oder einfach alphabetisch)
-    df = df.sort_values("Term")
-    terms = df["Term"].tolist()
-    OR = df["OR"].values
-    lo = df["CI_low"].values
-    hi = df["CI_high"].values
-
-    y = np.arange(len(terms))[::-1]
-    plt.figure(figsize=(7, 0.6*len(terms) + 1))
-    plt.hlines(y, lo, hi)
-    plt.plot(OR, y, "o")
-    plt.vlines(1.0, -1, len(terms), linestyles="--")
-    plt.yticks(y, terms)
-    plt.xlabel("Odds Ratio (log-Skala)")
-    plt.xscale("log")
-    plt.title("S4 – Odds Ratios (95%-KI)")
-    plt.tight_layout()
-    out = os.path.join(save_dir, "S4_forest_or.png")
-    plt.savefig(out, dpi=150); plt.close()
-    print("Forest-Plot gespeichert:", out)
-    return out
-
-
-#Plot
-
-def s4_plot_margins_duration(df: pd.DataFrame, save_dir: str) -> str:
-    """Marginaleffekt: p(AKI) über OP-Dauer (Baseline: Erst-OP, Referenz-Geschlecht)."""
-    import statsmodels.api as sm, numpy as np, pandas as pd, os, math
-
-    # === Daten & Dummy-Matrix wie im GLM ===
-    X = df[["duration_hours", "is_reop", "Sex_norm"]].copy()
-    X["duration_hours"] = pd.to_numeric(X["duration_hours"], errors="coerce")
-    X["duration_hours"] = X["duration_hours"].fillna(X["duration_hours"].median())
-    X["is_reop"] = pd.to_numeric(X["is_reop"], errors="coerce").fillna(0).astype(int)
-    X["Sex_norm"] = X["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan}).fillna("Missing")
-
+    # Dummies für Sex
     X_dm = pd.get_dummies(X, columns=["Sex_norm"], drop_first=True)
-    X_dm = X_dm.apply(pd.to_numeric, errors="coerce").replace([np.inf,-np.inf], np.nan).fillna(0.0).astype(np.float64)
-    X_dm_const = sm.add_constant(X_dm, has_constant="add")
+    X_dm = (X_dm.apply(pd.to_numeric, errors="coerce")
+               .replace([np.inf, -np.inf], np.nan)
+               .fillna(0.0).astype(np.float64))
+    X_dm = sm.add_constant(X_dm, has_constant="add")
 
+    # Cluster-GLM
+    groups = df["PMID"].astype("category").cat.codes.to_numpy()
+    model  = sm.GLM(y, X_dm.values, family=sm.families.Binomial())
+    res    = model.fit(cov_type="cluster", cov_kwds={"groups": groups, "use_correction": True})
+
+    # OR-Tabelle
+    params = res.params; se = res.bse; z = res.tvalues; p = res.pvalues
+    ci_lo  = params - 1.96*se; ci_hi = params + 1.96*se
+    terms  = list(X_dm.columns)
+    or_df = pd.DataFrame({
+        "Term": terms, "Coef": params, "OR": np.exp(params),
+        "CI_low": np.exp(ci_lo), "CI_high": np.exp(ci_hi), "z": z, "p": p
+    })
+    inter_csv = os.path.join(save_dir, "S4_glm_interaction_or.csv")
+    or_df.to_csv(inter_csv, index=False)
+
+    # Marginaler Dauer-Effekt (Steigung) je Gruppe (Erst-OP vs. Re-OP)
+    # slope(is_reop=g) = beta_duration + g * beta_interaction;  Var nach Delta-Methode
+    b = or_df.set_index("Term")["Coef"]
+    cov = res.cov_params()
+    def slope_and_ci(g=0):
+        beta_d = b.get("duration_hours", 0.0)
+        beta_i = b.get("duration_x_reop", 0.0)
+        slope  = beta_d + g*beta_i
+        # Var = var(d) + g^2 var(i) + 2g cov(d,i)
+        try:
+            idx_d = or_df.index[or_df["Term"]=="duration_hours"][0]
+            idx_i = or_df.index[or_df["Term"]=="duration_x_reop"][0]
+            var = cov[idx_d, idx_d] + (g**2)*cov[idx_i, idx_i] + 2*g*cov[idx_d, idx_i]
+        except Exception:
+            var = 0.0
+        se = np.sqrt(max(var, 0.0))
+        lo, hi = slope - 1.96*se, slope + 1.96*se
+        return slope, lo, hi
+
+    rows = []
+    for g, label in [(0, "Erst-OP"), (1, "Re-OP")]:
+        s, lo, hi = slope_and_ci(g)
+        rows.append({
+            "group": label,
+            "logit_slope_per_hour": s,
+            "OR_per_hour": float(np.exp(s)),
+            "OR_CI_low": float(np.exp(lo)),
+            "OR_CI_high": float(np.exp(hi)),
+        })
+    slopes_df = pd.DataFrame(rows)
+    slopes_csv = os.path.join(save_dir, "S4_glm_interaction_slopes_by_group.csv")
+    slopes_df.to_csv(slopes_csv, index=False)
+
+    print("Interaktion-ORs gespeichert:", inter_csv)
+    print("Steigungen (OR/h) gespeichert:", slopes_csv)
+    return {"or_path": inter_csv, "slopes_path": slopes_csv, "columns": terms, "params": params, "cov": cov}
+#s4_plot_margins_duration_by_reop_interaction
+def s4_plot_margins_duration_by_reop(df: pd.DataFrame, save_dir: str) -> str:
+    """Marginaleffekte p(AKI) ~ OP-Dauer für Erst-OP vs. Re-OP (95%-KI), ohne Interaktion im Fit."""
+    import os, numpy as np, pandas as pd, statsmodels.api as sm, matplotlib.pyplot as plt
+
+    # Features wie im GLM
+    feats = ["duration_hours", "is_reop", "Sex_norm"]
+    if "age_years_at_op" in df.columns:
+        feats.append("age_years_at_op")
+    X = df[feats].copy()
+    X["duration_hours"] = pd.to_numeric(X["duration_hours"], errors="coerce").fillna(X["duration_hours"].median())
+    X["is_reop"]        = pd.to_numeric(X["is_reop"], errors="coerce").fillna(0).astype(int)
+    X["Sex_norm"]       = X["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan}).fillna("Missing")
+    if "age_years_at_op" in X.columns:
+        X["age_years_at_op"] = pd.to_numeric(X["age_years_at_op"], errors="coerce").fillna(X["age_years_at_op"].median())
+
+    # Designmatrix wie im GLM
+    X_dm = pd.get_dummies(X, columns=["Sex_norm"], drop_first=True)
+    X_dm = (X_dm.apply(pd.to_numeric, errors="coerce")
+                .replace([np.inf, -np.inf], np.nan).fillna(0.0).astype(np.float64))
+    X_dm = sm.add_constant(X_dm, has_constant="add")
+
+    # Fit (cluster-robust)
     y = pd.to_numeric(df["event_idx"], errors="coerce").astype(int).values
     groups = df["PMID"].astype("category").cat.codes.to_numpy()
+    model  = sm.GLM(y, X_dm.values, family=sm.families.Binomial())
+    res    = model.fit(cov_type="cluster", cov_kwds={"groups": groups, "use_correction": True})
 
-    # === GLM mit cluster-robusten SE direkt beim Fit ===
-    model = sm.GLM(y, X_dm_const.values, family=sm.families.Binomial())
-    res = model.fit(cov_type="cluster", cov_kwds={"groups": groups, "use_correction": True})
-    params = res.params
-    cov = res.cov_params()
+    cols = list(X_dm.columns)
+    beta = res.params
+    cov  = res.cov_params()
 
-    # === Grid für Dauer (5.–95. Perzentil), Baseline: Erst-OP (is_reop=0), Referenz-Geschlecht ===
-    q = X["duration_hours"].quantile([0.05, 0.95]).values
-    grid = np.linspace(q[0], q[1], 60)
+    def row_for(duration, reop_flag):
+        d = {c: 0.0 for c in cols}
+        d["const"] = 1.0
+        d["duration_hours"] = float(duration)
+        d["is_reop"] = float(reop_flag)
+        if "age_years_at_op" in cols:
+            d["age_years_at_op"] = float(X["age_years_at_op"].median())
+        # Sex-Dummies bleiben 0 => Basis-Kategorie
+        return np.array([d[c] for c in cols], dtype=float)
 
-    # Designmatrix für Grid mit exakt gleichen Spalten wie X_dm_const
-    cols = list(X_dm_const.columns)
-    Xg = pd.DataFrame(0.0, index=np.arange(len(grid)), columns=cols, dtype=np.float64)
-    Xg["const"] = 1.0
-    if "duration_hours" in Xg.columns:
-        Xg["duration_hours"] = grid
-    if "is_reop" in Xg.columns:
-        Xg["is_reop"] = 0.0  # Baseline: Erst-OP
-    # alle Sex-Dummies bleiben 0 → Referenzkategorie
+    def invlogit(z):
+        z = np.clip(z, -50, 50); ez = np.exp(z); return ez/(1+ez)
 
-    # Vorhersage auf Link-Skala + Delta-Methode für 95%-KI, dann inverse Logit
-    Xg_mat = Xg.values
-    eta = Xg_mat @ params
-    var = np.einsum("ij,jk,ik->i", Xg_mat, cov, Xg_mat)
-    se = np.sqrt(np.clip(var, 0, np.inf))
+    grid = np.linspace(np.percentile(X["duration_hours"], 2),
+                       np.percentile(X["duration_hours"], 98), 80)
 
-    lo_eta = eta - 1.96*se
-    hi_eta = eta + 1.96*se
-    invlogit = lambda z: 1.0/(1.0+np.exp(-z))
-    p = invlogit(eta)
-    p_lo = invlogit(lo_eta)
-    p_hi = invlogit(hi_eta)
+    plt.figure(figsize=(7.5, 5.0))
+    for g, label in [(0, "Erst-OP"), (1, "Re-OP")]:
+        eta, se = [], []
+        for x in grid:
+            r = row_for(x, g)
+            eta.append(float(r @ beta))
+            se.append(float(np.sqrt(max(r @ cov @ r, 0.0))))
+        eta = np.array(eta); se = np.array(se)
+        p   = invlogit(eta)
+        lo  = invlogit(eta - 1.96*se)
+        hi  = invlogit(eta + 1.96*se)
+        plt.plot(grid, p, label=label)
+        plt.fill_between(grid, lo, hi, alpha=0.15)
 
-    # Plotten
-    plt.figure(figsize=(7,5))
-    plt.plot(grid, p, label="geschätzt")
-    plt.fill_between(grid, p_lo, p_hi, alpha=0.2, label="95%-KI")
     plt.xlabel("OP-Dauer (Stunden)")
     plt.ylabel("Prädizierte AKI-Wahrscheinlichkeit (0–7 Tage)")
-    plt.title("S4 – Marginaleffekt der OP-Dauer (Baseline: Erst-OP, Referenz-Geschlecht)")
+    plt.title("S4 – Marginaleffekte der OP-Dauer nach OP-Typ")
     plt.legend()
     plt.tight_layout()
-    out = os.path.join(save_dir, "S4_margins_duration.png")
-    plt.savefig(out, dpi=150); plt.close()
-    print("Marginaleffekte gespeichert:", out)
-    return out
-# Neu: Marginaleffekte der OP-Dauer nach Re-OP-Typen
-def s4_plot_margins_duration_by_reop(df: pd.DataFrame, save_dir: str) -> str:
-    """
-    Zwei Kurven: p(AKI) ~ duration_hours getrennt nach is_reop=0 vs. 1.
-    Modell: lineares Logit wie im GLM (cluster-robust).
-    """
-    import statsmodels.api as sm
-
-    # === Daten aufbereiten wie im GLM ===
-    X = df[["duration_hours", "is_reop", "Sex_norm"]].copy()
-    X["duration_hours"] = pd.to_numeric(X["duration_hours"], errors="coerce")
-    X["duration_hours"] = X["duration_hours"].fillna(X["duration_hours"].median())
-    X["is_reop"] = pd.to_numeric(X["is_reop"], errors="coerce").fillna(0).astype(int)
-    X["Sex_norm"] = X["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan}).fillna("Missing")
-
-    X_dm = pd.get_dummies(X, columns=["Sex_norm"], drop_first=True)
-    X_dm = X_dm.apply(pd.to_numeric, errors="coerce").replace([np.inf,-np.inf], np.nan).fillna(0.0).astype(np.float64)
-    X_dm_const = sm.add_constant(X_dm, has_constant="add")
-
-    y = pd.to_numeric(df["event_idx"], errors="coerce").astype(int).values
-    groups = df["PMID"].astype("category").cat.codes.to_numpy()
-
-    model = sm.GLM(y, X_dm_const.values, family=sm.families.Binomial())
-    res = model.fit(cov_type="cluster", cov_kwds={"groups": groups, "use_correction": True})
-    params = res.params; cov = res.cov_params()
-
-    # Grid 5.–95. Perzentil
-    q = X["duration_hours"].quantile([0.05, 0.95]).values
-    grid = np.linspace(q[0], q[1], 80)
-
-    # Spaltennamen merken
-    cols = list(X_dm_const.columns)
-
-    def predict_curve(is_reop_val: int):
-        Xg = pd.DataFrame(0.0, index=np.arange(len(grid)), columns=cols, dtype=np.float64)
-        Xg["const"] = 1.0
-        if "duration_hours" in Xg.columns: Xg["duration_hours"] = grid
-        if "is_reop" in Xg.columns: Xg["is_reop"] = float(is_reop_val)
-        # Sex-Dummies = 0 -> Referenz
-        Xg_mat = Xg.values
-        eta = Xg_mat @ params
-        var = np.einsum("ij,jk,ik->i", Xg_mat, cov, Xg_mat)
-        se = np.sqrt(np.clip(var, 0, np.inf))
-        invlogit = lambda z: 1/(1+np.exp(-z))
-        return invlogit(eta), invlogit(eta-1.96*se), invlogit(eta+1.96*se)
-
-    p0, lo0, hi0 = predict_curve(0)  # Erst-OP
-    p1, lo1, hi1 = predict_curve(1)  # Re-OP
-
-    # Plotten
-    plt.figure(figsize=(7,5))
-    plt.plot(grid, p0, label="Erst-OP"); plt.fill_between(grid, lo0, hi0, alpha=0.15)
-    plt.plot(grid, p1, label="Re-OP");  plt.fill_between(grid, lo1, hi1, alpha=0.15)
-    plt.xlabel("OP-Dauer (Stunden)"); plt.ylabel("Prädizierte AKI-Wahrscheinlichkeit (0–7 Tage)")
-    plt.title("S4 – Marginaleffekte der OP-Dauer nach OP-Typ")
-    plt.legend(); plt.tight_layout()
     out = os.path.join(save_dir, "S4_margins_duration_by_reop.png")
     plt.savefig(out, dpi=150); plt.close()
     print("Margins (Erst-OP vs. Re-OP) gespeichert:", out)
     return out
 
-import os
-import numpy as np
-from anndata import read_h5ad
-from ehrapy import load_adata, define_event_index_on_adata, build_survival
-import platform, sys, pandas as pd
-import ehrapy as ep
-try:
-    import ehrapy as ep; ep_ver = ep.__version__
-except Exception:
-    ep_ver = "nicht importiert"
-adata.uns["provenance"] = {
-    "framework": "ehrapy-first (AnnData/H5AD)",
-    "versions": {
-        "python": platform.python_version(),
-        "ehrapy": ep_ver,
-        "pandas": pd.__version__,
-        "statsmodels": __import__("statsmodels").__version__,
-        "sklearn": __import__("sklearn").__version__,
-    },
-    "stages": ["S1 Survival-Setup", "S2 Table1", "S3 Table1-Stats", "S4 GLM+CV+Plots"]
-}
-
-
-
-
-
-
-
-if __name__ == "__main__":
-    main()     # S1
-    main_s2()  # S2
-    main_s4()  # S4  
-    
-    
-    
-
-# %%
-
+####
 # ========= S4: Interaktion Dauer × Re-OP =========
 def _fit_glm_clustered_interaction(df: pd.DataFrame, save_dir: str) -> dict:
     """GLM (Logit) mit Interaktion duration_hours * is_reop; cluster-robuste SE (Cluster=PMID)."""
@@ -1033,3 +1109,300 @@ def s4_plot_margins_duration_by_reop_interaction(df: pd.DataFrame, save_dir: str
     plt.savefig(out, dpi=150); plt.close()
     print("Interaktions-Margins gespeichert:", out)
     return out
+
+#  Zusatzgrafik, die die beiden Steigungen (OR/h) mit 95 %-KI nebeneinander als Forest-Mini-Plot zeig
+def s4_plot_interaction_slopes_forest(save_dir: str) -> str:
+    """
+    Liest Diagramme/S4_glm_interaction_slopes_by_group.csv und zeichnet
+    einen kompakten Forest-Plot (OR/h mit 95%-KI) für Erst-OP vs. Re-OP.
+    """
+    import os, numpy as np, pandas as pd, matplotlib.pyplot as plt
+
+    csv_path = os.path.join(save_dir, "S4_glm_interaction_slopes_by_group.csv")
+    if not os.path.exists(csv_path):
+        print(f"WARN: {csv_path} nicht gefunden – überspringe Forest (Slopes).")
+        return ""
+
+    df = pd.read_csv(csv_path)
+    # Erwartete Spalten: group / OR_per_hour / OR_CI_low / OR_CI_high
+    # (deine CSV hat evtl. deutsche Namen – abfangen)
+    if {"group","OR_per_hour","OR_CI_low","OR_CI_high"}.issubset(df.columns):
+        g   = df["group"].astype(str).tolist()
+        OR  = df["OR_per_hour"].astype(float).values
+        lo  = df["OR_CI_low"].astype(float).values
+        hi  = df["OR_CI_high"].astype(float).values
+    else:
+        # Deutsche Varianten aus deiner Ausgabe:
+        g   = df.iloc[:,0].astype(str).tolist()                  # Gruppe
+        OR  = df.iloc[:,1].astype(float).values                  # OR_pro_Stunde
+        lo  = df.iloc[:,2].astype(float).values                  # CI_low
+        hi  = df.iloc[:,3].astype(float).values                  # CI_high
+
+    # Reihenfolge: Erst-OP oben, Re-OP unten (wie in deiner Tabelle)
+    y = np.arange(len(g))[::-1]
+
+    plt.figure(figsize=(6.5, 2.8))
+    # Konfidenzintervalle
+    plt.hlines(y, lo, hi)
+    # Punkt-OR
+    plt.plot(OR, y, "o")
+    # Referenzlinie bei OR=1
+    plt.vlines(1.0, -1, len(g), linestyles="--")
+
+    plt.yticks(y, g)
+    plt.xscale("log")
+    plt.xlabel("OR pro Stunde (log-Skala)")
+    plt.title("Steigung der AKI-Odds pro Stunde – Erst-OP vs. Re-OP")
+    plt.tight_layout()
+
+    out = os.path.join(save_dir, "S4_interaction_slopes_forest.png")
+    plt.savefig(out, dpi=150)
+    plt.close()
+    print("Mini-Forest (Slopes) gespeichert:", out)
+    return out
+def s4_plot_margins_age(df: pd.DataFrame, save_dir: str) -> str:
+    """
+    Marginaleffekt: pr(AKI) über Alter (Jahre) – Basis: Erst-OP, Referenz-Geschlecht,
+    Dauer fix auf Median. Nutzt das gleiche GLM-Setup (cluster-robust).
+    """
+    import os, numpy as np, pandas as pd, statsmodels.api as sm, matplotlib.pyplot as plt
+
+    if "age_years_at_op" not in df.columns or df["age_years_at_op"].notna().sum() == 0:
+        print("WARN: Keine Altersvariable vorhanden – Alter-Plot übersprungen.")
+        return ""
+
+    # === Daten wie im GLM ===
+    feats = ["duration_hours", "is_reop", "Sex_norm", "age_years_at_op"]
+    X = df[feats].copy()
+
+    # Fixwerte: Dauer = Median, Re-OP = 0 (Erst-OP), Sex = häufigste Kategorie
+    dur_med  = pd.to_numeric(X["duration_hours"], errors="coerce").median()
+    X["duration_hours"] = pd.to_numeric(X["duration_hours"], errors="coerce").fillna(dur_med)
+    X["is_reop"]        = pd.to_numeric(X["is_reop"], errors="coerce").fillna(0).astype(int)
+    sex_mode = (X["Sex_norm"].astype(str)
+                .replace({"nan": np.nan, "None": np.nan})
+                .fillna("Missing")).mode().iat[0]
+    X["Sex_norm"] = X["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan}).fillna(sex_mode)
+    X["age_years_at_op"] = pd.to_numeric(X["age_years_at_op"], errors="coerce")
+
+    # Designmatrix wie im GLM
+    X_dm = pd.get_dummies(X, columns=["Sex_norm"], drop_first=True)
+    X_dm = (X_dm.apply(pd.to_numeric, errors="coerce")
+                .replace([np.inf, -np.inf], np.nan)
+                .fillna(0.0).astype(np.float64))
+    X_dm = sm.add_constant(X_dm, has_constant="add")
+
+    # Fit
+    y = pd.to_numeric(df["event_idx"], errors="coerce").astype(int).values
+    groups = df["PMID"].astype("category").cat.codes.to_numpy()
+    model  = sm.GLM(y, X_dm.values, family=sm.families.Binomial())
+    res    = model.fit(cov_type="cluster", cov_kwds={"groups": groups, "use_correction": True})
+
+    cols = list(X_dm.columns)
+    beta = res.params
+    cov  = res.cov_params()
+
+    # Hilfsvektor für Vorhersage: Erst-OP, Dauer=Median, Sex=Referenz (alle Sex-Dummies=0)
+    def row_for(age_years: float):
+        d = {c: 0.0 for c in cols}
+        d["const"] = 1.0
+        d["duration_hours"]  = float(dur_med)
+        d["is_reop"]         = 0.0
+        d["age_years_at_op"] = float(age_years)
+        # Sex-Dummyspalten bleiben 0 → Referenzkategorie
+        return np.array([d[c] for c in cols], dtype=float)
+
+    def invlogit(z):
+        z = np.clip(z, -50, 50); ez = np.exp(z); return ez / (1.0 + ez)
+
+    s = df["age_years_at_op"].dropna().astype(float)
+    lo_q, hi_q = np.percentile(s, [2, 98])
+    grid = np.linspace(lo_q, hi_q, 80)
+
+    eta, se = [], []
+    for a in grid:
+        r = row_for(a)
+        eta.append(float(r @ beta))
+        se.append(float(np.sqrt(max(r @ cov @ r, 0.0))))
+    eta = np.array(eta); se = np.array(se)
+
+    p   = invlogit(eta)
+    lo  = invlogit(eta - 1.96*se)
+    hi  = invlogit(eta + 1.96*se)
+
+    plt.figure(figsize=(7.5, 5.5))
+    plt.plot(grid, p, label="geschätzt")
+    plt.fill_between(grid, lo, hi, alpha=0.15, label="95%-KI")
+    plt.xlabel("Alter zum OP-Zeitpunkt (Jahre)")
+    plt.ylabel("Prädizierte AKI-Wahrscheinlichkeit (0–7 Tage)")
+    plt.title("S4 – Marginaleffekt des Alters (Basis: Erst-OP, Dauer=Median)")
+    plt.legend()
+    plt.tight_layout()
+
+    out = os.path.join(save_dir, "S4_margins_age.png")
+    plt.savefig(out, dpi=150); plt.close()
+    print("Marginaleffekt (Alter) gespeichert:", out)
+    return out
+
+
+
+
+def main_s4():
+    """S4 ausführen und Ergebnisse in adata.uns ablegen (nur einfache Typen)."""
+    from anndata import read_h5ad
+    import pandas as pd
+
+    h5 = CFG.OUT_H5AD if hasattr(CFG, "OUT_H5AD") else CFG.PATH_H5AD
+    adata = read_h5ad(h5)
+
+    # Basis-DF
+    df = _prepare_model_df(adata)
+
+    # GLM (ohne Interaktion), CV, Standard-Plots
+    or_csv = _fit_glm_clustered(df, CFG.SAVE_DIR)
+    metrics = _run_groupkfold_cv(df, CFG.SAVE_DIR, n_splits=5)
+    s4_plot_forest(or_csv, CFG.SAVE_DIR)
+    s4_plot_margins_duration(df, CFG.SAVE_DIR)
+    s4_plot_margins_duration_by_reop(df, CFG.SAVE_DIR)
+    # Alter-Plot nur, wenn vorhanden
+    if "age_years_at_op" in df.columns and df["age_years_at_op"].notna().any():
+        s4_plot_margins_age(df, CFG.SAVE_DIR)
+    # Interaktionsanalyse + Plot
+    #inter = _fit_glm_clustered_interaction(df, CFG.SAVE_DIR)
+    #inter_png = s4_plot_margins_duration_by_reop_interaction(df, CFG.SAVE_DIR)
+    s4_plot_interaction_slopes_forest(CFG.SAVE_DIR)
+
+    # in uns referenzieren
+    try:
+        k_terms = int(len(pd.read_csv(or_csv)))
+    except Exception:
+        k_terms = 0
+    adata.uns["S4_glm"] = {
+        "or_table_path": or_csv,
+        "forest_path": os.path.join(CFG.SAVE_DIR, "S4_forest_or.png"),
+        "margins_duration_path": os.path.join(CFG.SAVE_DIR, "S4_margins_duration.png"),
+        "margins_by_reop_path": os.path.join(CFG.SAVE_DIR, "S4_margins_duration_by_reop.png"),
+        "n": int(df.shape[0]),
+        "k": k_terms
+    }
+    #adata.uns["S4_interaction"] = {**inter, "margins_path": inter_png}
+    adata.uns["S4_cv"] = metrics
+
+    adata.write_h5ad(h5)
+    print(f"AnnData (S4) gespeichert: {h5}")
+
+        
+    # ===== S4: Visualisierungen =====
+import matplotlib.pyplot as plt
+
+def s4_plot_forest(or_csv_path: str, save_dir: str) -> str:
+    """Forest-Plot für ORs (exkl. Intercept)."""
+    import pandas as pd, numpy as np, os
+    df = pd.read_csv(or_csv_path)
+    df = df[df["Term"] != "const"].copy()
+    if df.empty:
+        return ""
+    # Sortierung: erst binär/kategorial, dann kontinuierlich (oder einfach alphabetisch)
+    df = df.sort_values("Term")
+    terms = df["Term"].tolist()
+    OR = df["OR"].values
+    lo = df["CI_low"].values
+    hi = df["CI_high"].values
+
+    y = np.arange(len(terms))[::-1]
+    plt.figure(figsize=(7, 0.6*len(terms) + 1))
+    plt.hlines(y, lo, hi)
+    plt.plot(OR, y, "o")
+    plt.vlines(1.0, -1, len(terms), linestyles="--")
+    plt.yticks(y, terms)
+    plt.xlabel("Odds Ratio (log-Skala)")
+    plt.xscale("log")
+    plt.title("S4 – Odds Ratios (95%-KI)")
+    plt.tight_layout()
+    out = os.path.join(save_dir, "S4_forest_or.png")
+    plt.savefig(out, dpi=150); plt.close()
+    print("Forest-Plot gespeichert:", out)
+    return out
+
+
+#Plot
+
+def s4_plot_margins_duration(df: pd.DataFrame, save_dir: str) -> str:
+    """Marginaleffekt: p(AKI) über OP-Dauer (Baseline: Erst-OP, Referenz-Geschlecht)."""
+    import statsmodels.api as sm, numpy as np, pandas as pd, os, math
+
+    # === Daten & Dummy-Matrix wie im GLM ===
+    X = df[["duration_hours", "is_reop", "Sex_norm"]].copy()
+    X["duration_hours"] = pd.to_numeric(X["duration_hours"], errors="coerce")
+    X["duration_hours"] = X["duration_hours"].fillna(X["duration_hours"].median())
+    X["is_reop"] = pd.to_numeric(X["is_reop"], errors="coerce").fillna(0).astype(int)
+    X["Sex_norm"] = X["Sex_norm"].astype(str).replace({"nan": np.nan, "None": np.nan}).fillna("Missing")
+
+    X_dm = pd.get_dummies(X, columns=["Sex_norm"], drop_first=True)
+    X_dm = X_dm.apply(pd.to_numeric, errors="coerce").replace([np.inf,-np.inf], np.nan).fillna(0.0).astype(np.float64)
+    X_dm_const = sm.add_constant(X_dm, has_constant="add")
+
+    y = pd.to_numeric(df["event_idx"], errors="coerce").astype(int).values
+    groups = df["PMID"].astype("category").cat.codes.to_numpy()
+
+    # === GLM mit cluster-robusten SE direkt beim Fit ===
+    model = sm.GLM(y, X_dm_const.values, family=sm.families.Binomial())
+    res = model.fit(cov_type="cluster", cov_kwds={"groups": groups, "use_correction": True})
+    params = res.params
+    cov = res.cov_params()
+
+    # === Grid für Dauer (5.–95. Perzentil), Baseline: Erst-OP (is_reop=0), Referenz-Geschlecht ===
+    q = X["duration_hours"].quantile([0.05, 0.95]).values
+    grid = np.linspace(q[0], q[1], 60)
+
+    # Designmatrix für Grid mit exakt gleichen Spalten wie X_dm_const
+    cols = list(X_dm_const.columns)
+    Xg = pd.DataFrame(0.0, index=np.arange(len(grid)), columns=cols, dtype=np.float64)
+    Xg["const"] = 1.0
+    if "duration_hours" in Xg.columns:
+        Xg["duration_hours"] = grid
+    if "is_reop" in Xg.columns:
+        Xg["is_reop"] = 0.0  # Baseline: Erst-OP
+    # alle Sex-Dummies bleiben 0 → Referenzkategorie
+    
+    # Vorhersage auf Link-Skala + Delta-Methode für 95%-KI, dann inverse Logit
+    Xg_mat = Xg.values
+    eta = Xg_mat @ params
+    var = np.einsum("ij,jk,ik->i", Xg_mat, cov, Xg_mat)
+    se = np.sqrt(np.clip(var, 0, np.inf))
+
+    lo_eta = eta - 1.96*se
+    hi_eta = eta + 1.96*se
+    invlogit = lambda z: 1.0/(1.0+np.exp(-z))
+    p = invlogit(eta)
+    p_lo = invlogit(lo_eta)
+    p_hi = invlogit(hi_eta)
+
+    # Plotten
+    plt.figure(figsize=(7,5))
+    plt.plot(grid, p, label="geschätzt")
+    plt.fill_between(grid, p_lo, p_hi, alpha=0.2, label="95%-KI")
+    plt.xlabel("OP-Dauer (Stunden)")
+    plt.ylabel("Prädizierte AKI-Wahrscheinlichkeit (0–7 Tage)")
+    plt.title("S4 – Marginaleffekt der OP-Dauer (Baseline: Erst-OP, Referenz-Geschlecht)")
+    plt.legend()
+    plt.tight_layout()
+    out = os.path.join(save_dir, "S4_margins_duration.png")
+    plt.savefig(out, dpi=150); plt.close()
+    print("Marginaleffekte gespeichert:", out)
+    return out
+
+    
+
+if __name__ == "__main__":
+    #main()     # S1
+   # main_s2()  # S2
+    main_s4()  # S4  
+    
+    
+    
+
+# %%
+
+
+

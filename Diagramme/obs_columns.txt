@@ -1,0 +1,16 @@
+PMID
+SMID
+Procedure_ID
+Surgery_Start
+Surgery_End
+duration_minutes
+AKI_Start
+days_to_AKI
+AKI_linked
+AKI_linked_0_7
+Sex_norm
+event_idx
+time_0_7
+is_reop
+duration_hours
+duration_tertile

@@ -12,4 +12,4 @@ SCRIPTS = [
 for s in SCRIPTS:
     print(f"\n>>> Running: {s}")
     subprocess.run([sys.executable, s], check=True)
-print("\nFertig. Ergebnisse im Ordner erscheinen (z. B. PNG/CSV).")
+    print("\nFertig. Ergebnisse im Ordner erscheinen (z. B. PNG/CSV).")

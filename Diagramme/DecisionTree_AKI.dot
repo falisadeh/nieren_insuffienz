@@ -1,0 +1,33 @@
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname="helvetica"] ;
+edge [fontname="helvetica"] ;
+0 [label=<age_years_at_op &le; -0.359<br/>gini = 0.5<br/>samples = 100.0%<br/>value = [0.5, 0.5]<br/>class = kein AKI>, fillcolor="#ffffff"] ;
+1 [label=<is_reop &le; 1.175<br/>gini = 0.467<br/>samples = 62.8%<br/>value = [0.371, 0.629]<br/>class = AKI>, fillcolor="#aed7f4"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label=<duration_hours &le; -0.987<br/>gini = 0.445<br/>samples = 56.5%<br/>value = [0.333, 0.667]<br/>class = AKI>, fillcolor="#9ccef2"] ;
+1 -> 2 ;
+3 [label=<gini = 0.431<br/>samples = 7.1%<br/>value = [0.685, 0.315]<br/>class = kein AKI>, fillcolor="#f1bb94"] ;
+2 -> 3 ;
+4 [label=<gini = 0.41<br/>samples = 49.4%<br/>value = [0.288, 0.712]<br/>class = AKI>, fillcolor="#89c5f0"] ;
+2 -> 4 ;
+5 [label=<age_years_at_op &le; -0.633<br/>gini = 0.378<br/>samples = 6.3%<br/>value = [0.747, 0.253]<br/>class = kein AKI>, fillcolor="#eeac7c"] ;
+1 -> 5 ;
+6 [label=<gini = 0.364<br/>samples = 0.8%<br/>value = [0.239, 0.761]<br/>class = AKI>, fillcolor="#77bced"] ;
+5 -> 6 ;
+7 [label=<gini = 0.284<br/>samples = 5.5%<br/>value = [0.829, 0.171]<br/>class = kein AKI>, fillcolor="#ea9b62"] ;
+5 -> 7 ;
+8 [label=<duration_hours &le; 1.355<br/>gini = 0.388<br/>samples = 37.2%<br/>value = [0.737, 0.263]<br/>class = kein AKI>, fillcolor="#eeae80"] ;
+0 -> 8 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+9 [label=<duration_hours &le; -0.932<br/>gini = 0.352<br/>samples = 33.9%<br/>value = [0.772, 0.228]<br/>class = kein AKI>, fillcolor="#eda674"] ;
+8 -> 9 ;
+10 [label=<gini = 0.123<br/>samples = 6.3%<br/>value = [0.934, 0.066]<br/>class = kein AKI>, fillcolor="#e78a47"] ;
+9 -> 10 ;
+11 [label=<gini = 0.388<br/>samples = 27.6%<br/>value = [0.736, 0.264]<br/>class = kein AKI>, fillcolor="#eeae80"] ;
+9 -> 11 ;
+12 [label=<age_years_at_op &le; 1.67<br/>gini = 0.483<br/>samples = 3.3%<br/>value = [0.408, 0.592]<br/>class = AKI>, fillcolor="#c1e0f7"] ;
+8 -> 12 ;
+13 [label=<gini = 0.447<br/>samples = 1.5%<br/>value = [0.663, 0.337]<br/>class = kein AKI>, fillcolor="#f2c19e"] ;
+12 -> 13 ;
+14 [label=<gini = 0.329<br/>samples = 1.8%<br/>value = [0.208, 0.792]<br/>class = AKI>, fillcolor="#6db7ec"] ;
+12 -> 14 ;
+}

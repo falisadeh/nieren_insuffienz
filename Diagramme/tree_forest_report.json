@@ -1,0 +1,24 @@
+{
+  "input": "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad",
+  "features": [
+    "duration_hours",
+    "age_years_at_op",
+    "is_reop",
+    "Sex_norm"
+  ],
+  "tree": {
+    "roc_auc": 0.6792590302923254,
+    "pr_auc": 0.5676986327840339,
+    "roc_png": "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme/DecisionTree_AKI_ROC.png",
+    "pr_png": "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme/DecisionTree_AKI_PR.png",
+    "graphviz_png": "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme/DecisionTree_AKI.png",
+    "dot": "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme/DecisionTree_AKI.dot"
+  },
+  "random_forest": {
+    "roc_auc": 0.7083370131590567,
+    "pr_auc": 0.6263911228752349,
+    "roc_png": "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme/RandomForest_AKI_ROC.png",
+    "pr_png": "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme/RandomForest_AKI_PR.png",
+    "feature_importances_csv": "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme/RandomForest_AKI_feature_importances.csv"
+  }
+}

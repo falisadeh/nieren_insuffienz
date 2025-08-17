@@ -15,7 +15,7 @@ FILES = {
 }
 
 def ok(path: Path) -> str:
-    return "✅" if path.exists() else "❌"
+    return "" if path.exists() else " ⚠️ fehlt"
 
 print("=== Dateien prüfen ===")
 for k, p in FILES.items():
@@ -90,4 +90,4 @@ print("\nobs enthält:", present)
 if missing_obs:
     print("⚠️ obs fehlt:", missing_obs)
 
-print("\nFertig. Alles geladen ✅")
+print("\nFertig. Alles geladen ")

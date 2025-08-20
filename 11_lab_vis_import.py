@@ -1,21 +1,19 @@
 # 11_lab_vis_import.py
-# Sauberer Import + Harmonisierung (ehrapy/AnnData)
+# Import + Harmonisierung (ehrapy/AnnData)
 
 import pandas as pd
 import numpy as np
 from pathlib import Path
 from anndata import AnnData
-import ehrapy as ep  # bleibt im Projekt, auch wenn wir hier pandas/h5ad fürs Speichern nutzen
-
-# ===================== Pfade =====================
-# Nutze ENTWEDER absolute Pfade ODER BASE + relative Dateinamen – nicht mischen.
+import ehrapy as ep  
+# Pfade
 LAB_SRC = "/Users/fa/Downloads/cs-transfer/Laborwerte_Kreatinin+CystatinC.csv"
 VIS_SRC = "/Users/fa/Downloads/cs-transfer/VIS.csv"
 
 OUT_DIR = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# ================= Einlese-Helfer =================
+# Einlese-Helfer 
 def read_semicolon_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(
         path,
@@ -40,7 +38,7 @@ print("VIS-Spalten:", vis_df.columns.tolist())
 print(lab_df.head())
 print(vis_df.head())
 
-# =============== Pflichtspalten prüfen ===============
+# Pflichtspalten prüfen 
 need_lab = {"PMID","SMID","CollectionTimestamp","Parameter","QuantitativeValue","Unit","LOINC"}
 need_vis = {"PMID","SMID","Timestamp","vis"}
 
@@ -51,7 +49,7 @@ if missing_lab:
 if missing_vis:
     raise ValueError(f"Fehlende Spalten in VIS: {missing_vis}\nGefunden: {vis_df.columns.tolist()}")
 
-# =============== Numerik & Zeit ===============
+#  Numerik & Zeit 
 # Dezimal-Komma -> Punkt
 lab_df["QuantitativeValue"] = (
     lab_df["QuantitativeValue"]
@@ -76,13 +74,13 @@ print("\nEinzigartige Parameter (Top 20):", lab_df["Parameter"].dropna().unique(
 print("Einheiten (Top 20):", lab_df["Unit"].dropna().unique()[:20])
 print("\nVIS-Statistik:\n", vis_df["vis"].describe())
 
-# =============== AnnData erstellen (.obs voll) ===============
+# AnnData erstellen (.obs voll) 
 lab = AnnData(X=np.empty((len(lab_df), 0)))
 lab.obs = lab_df.copy()
 vis = AnnData(X=np.empty((len(vis_df), 0)))
 vis.obs = vis_df.copy()
 
-# =============== Parameter-Erkennung ===============
+# Parameter-Erkennung
 def norm_text(s: str) -> str:
     if pd.isna(s): return ""
     s = str(s).strip().lower()
@@ -111,7 +109,7 @@ def is_param(row, key: str) -> bool:
 lab.obs["is_creatinine"] = lab.obs.apply(lambda r: is_param(r, "creatinine"), axis=1)
 lab.obs["is_cystatin_c"] = lab.obs.apply(lambda r: is_param(r, "cystatin_c"), axis=1)
 
-# =============== Einheiten harmonisieren ===============
+# Einheiten harmonisieren 
 def unify_units(value: float, unit_raw: str, is_crea: bool, is_cysc: bool):
     unit = (unit_raw or "").strip().lower()
     if is_crea:
@@ -147,18 +145,18 @@ print("\n— Harmonisierung —")
 print(lab.obs["Parameter_std"].value_counts(dropna=False))
 print("Einheiten nach Harmonisierung:", lab.obs["Unit_std"].value_counts(dropna=False).to_dict())
 
-# =============== Speichern (CSV + H5AD) ===============
+# Speichern (CSV + H5AD) 
 # Roh-clean (zur Kontrolle)
 lab.obs.to_csv(OUT_DIR / "lab_raw_clean.csv", index=False)
 vis.obs.to_csv(OUT_DIR / "vis_raw_clean.csv", index=False)
 
-# Harmonisierte Labor-Zieltabelle (nur Krea/CysC) – gut für spätere Merges/Features
+# Harmonisierte Labor-Zieltabelle (nur Krea/CysC), gut für spätere Merges/Features
 lab_harm = lab.obs.loc[lab.obs["Parameter_std"].isin(["creatinine","cystatin_c"]),
                        ["PMID","SMID","CollectionTimestamp","Parameter_std","Value_std","Unit_std","Parameter","LOINC","Unit"]]
 lab_harm.to_csv(OUT_DIR / "lab_crea_cysc_harmonized.csv", index=False)
 
 # AnnData speichern
-# vor lab.write(...) und vis.write(...)
+
 
 def stringify_datetime_columns(df, fmt="%Y-%m-%d %H:%M:%S"):
     dt_cols = df.select_dtypes(include=["datetime64[ns]", "datetime64[ns, UTC]"]).columns

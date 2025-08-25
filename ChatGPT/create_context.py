@@ -109,27 +109,6 @@ if __name__ == "__main__":
     ziel_verzeichnis = (
         "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
     )
-
-    kontext_kopf = textwrap.dedent(
-        """
-        Ich soll so viel wie möglich die Funktionen von ehrapy benutzen: 
-        https://github.com/theislab/ehrapy. Tutorials üeber ehrapy findest du hier:
-        https://github.com/theislab/ehrapy-tutorials. Mache dich damit vertraut.
-
-        Meine Bachelorarbeit handelt von Niereninsuffiezienz in Kindern.
-        Meine Daten findest du hier:
-        {dateiköpfe}
-
-        {anweisung}
-        """
-    )
-    anweisung = "Nutze lineare Regression."
-    erinnerung = textwrap.dedent(
-        """
-        Bitte antworte nur auf Deutsch.
-        Antworte nur auf Basis der Informationen in diesem Kontext.
-        """
-    )
     nutze_alten_code = False
 
     dateikoepfe = ""
@@ -173,8 +152,35 @@ if __name__ == "__main__":
             "Original Daten",
         ]
     else:
-        einzuschliessende_elemente = []
+        # MAMA CODE HINZUFUEGEN
+        einzuschliessende_elemente = [
+            # "daten.py",
+        ]
         auszuschliessende_elemente = []
+
+    # MAMA AENDERN
+    kontext_kopf = textwrap.dedent(
+        """
+        Ich soll so viel wie möglich die Funktionen von ehrapy benutzen: 
+        https://github.com/theislab/ehrapy. Tutorials üeber ehrapy findest du hier:
+        https://github.com/theislab/ehrapy-tutorials. Mache dich damit vertraut.
+
+        Meine Bachelorarbeit handelt von Niereninsuffiezienz in Kindern.
+        Meine Daten findest du hier:
+        {dateiköpfe}
+
+        Vis ist ein Blutwert, der in meiner Arbeit keine Rolle spielt.
+
+        {anweisung}
+        """
+    )
+    anweisung = "Erstelle eine Datei mit allen Daten und imputiere fehlende Werte. Speicher im Ordner Daten als h5ad Datei."
+    erinnerung = textwrap.dedent(
+        """
+        Bitte antworte nur auf Deutsch.
+        Antworte nur auf Basis der Informationen in diesem Kontext.
+        """
+    )
 
     erstelle_kontext_datei(
         quell_verzeichnis=ziel_verzeichnis,

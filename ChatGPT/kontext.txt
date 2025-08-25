@@ -1,0 +1,67 @@
+Ich soll so viel wie möglich die Funktionen von ehrapy benutzen: 
+https://github.com/theislab/ehrapy. Tutorials üeber ehrapy findest du hier:
+https://github.com/theislab/ehrapy-tutorials. Mache dich damit vertraut.
+
+Meine Bachelorarbeit handelt von Niereninsuffiezienz in Kindern.
+Meine Daten findest du hier:
+
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/VIS.csv ---
+
+﻿PMID;SMID;Timestamp;vis
+300009;300009001;2152-10-22 14:55:00.000;0.000
+300009;300009001;2152-10-23 10:51:29.000;0.000
+300009;300009001;2152-10-23 14:39:00.000;0.000
+300009;300009001;2152-10-23 17:40:07.000;6.790
+
+
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Laboratory_Kreatinin+CystatinC.csv ---
+
+﻿PMID;SMID;CollectionTimestamp;Parameter;QuantitativeValue;LaborPanelID;SpecimenID;Unit;LOINC;Ward;Ward_Type
+300009;300009001;2152-10-20 11:10:00.000;S-Creat/enz;28;300576393;300829936KCH;µmol/l;14682-9;J;Pediatric Cardiology
+300009;300009001;2152-10-23 16:30:00.000;S-Creat/enz;32;301152089;301207533KCH;µmol/l;14682-9;G;Interdisciplinary pediatric intensive care unit
+300009;300009001;2152-10-23 23:47:00.000;S-Creat/enz;56;301776902;301549278KCH;µmol/l;14682-9;G;Interdisciplinary pediatric intensive care unit
+300009;300009001;2152-10-24 14:55:00.000;S-Creat/enz;89;300048801;300918457KCH;µmol/l;14682-9;G;Interdisciplinary pediatric intensive care unit
+
+
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/AKI Label.csv ---
+
+﻿PMID;Duartion;Start;End;Decision
+300009;181020000;2152-10-23 23:47:00.000;2152-10-26 02:04:00.000;AKI 2
+300009;554340000;2152-10-23 23:47:00.000;2152-10-30 08:46:00.000;AKI 1
+300009;126540000;2152-10-24 14:55:00.000;2152-10-26 02:04:00.000;AKI 3
+300012;1209300000;2153-05-17 00:43:00.000;2153-05-31 00:38:00.000;AKI 1
+
+
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Patient Master Data.csv ---
+
+﻿PMID;Sex;DateOfBirth;DateOfDie
+300009;f;2152-03-31 00:00:00.000;NULL
+300012;f;2151-01-18 00:00:00.000;NULL
+300013;f;2153-05-01 00:00:00.000;NULL
+300016;m;2151-05-31 00:00:00.000;NULL
+
+
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Procedure Supplement.csv ---
+
+﻿PMID;SMID;TimestampName;Timestamp;Procedure_ID
+300009;300009001;AZPFLVORV;2152-10-23 09:41:00.000;300004306
+300009;300009001;Patient retrieved;2152-10-23 09:41:00.000;300004306
+300009;300009001;AZPFLVORB;2152-10-23 10:01:00.000;300004306
+300009;300009001;Surgery preparation from;2152-10-23 10:07:00.000;300004306
+
+
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/HLM Operationen.csv ---
+
+﻿PMID;SMID;Procedure_ID;Start of surgery;End of surgery;Tx?
+300009;300009001;300004306;2152-10-23 11:34:00.000;2152-10-23 17:20:00.000;NULL
+300012;300012002;300001794;2153-05-16 03:08:00.000;2153-05-16 07:50:00.000;Tx
+300013;300013001;300001290;2154-02-06 09:24:00.000;2154-02-06 14:26:00.000;NULL
+300016;300016001;300004436;2157-05-02 09:52:00.000;2157-05-02 12:33:00.000;NULL
+
+
+
+Nutze lineare Regression.
+
+Bitte antworte nur auf Deutsch.
+Antworte nur auf Basis der Informationen in diesem Kontext.
+

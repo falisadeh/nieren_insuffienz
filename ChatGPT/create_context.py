@@ -3,96 +3,114 @@ import sys
 import textwrap
 
 
-def create_context_file(
+def erstelle_kontext_datei(
     *,
-    context_head: str,
-    reminder: str,
-    source_directory: str,
-    output_filename: str = "ChatGPT/context.txt",
-    include_items: list[str] | None = None,
-    exclude_items: list[str] | None = None,
+    kontext_kopf: str,
+    erinnerung: str,
+    quell_verzeichnis: str,
+    ausgabe_dateiname: str = "ChatGPT/kontext.txt",
+    einzuschliessende_elemente: list[str] | None = None,
+    auszuschliessende_elemente: list[str] | None = None,
 ) -> None:
     """
-    Copies the content of all files in a directory (and its subdirectories)
-    into a single output file, excluding specified files or folders.
+    Kopiert den Inhalt aller Dateien in einem Verzeichnis (und seinen
+    Unterverzeichnissen) in eine einzige Ausgabedatei, wobei bestimmte
+    Dateien oder Ordner ausgeschlossen werden.
 
     Args:
-        source_directory (str): The path to the directory to traverse.
-        output_filename (str): The name of the file to write the content to.
-                               Defaults to 'context.txt'.
-        exclude_items (list[str]): A list of file or folder names (base names)
-                                   to exclude. Defaults to None.
+        quell_verzeichnis (str): Der Pfad zu dem zu durchlaufenden Verzeichnis.
+        ausgabe_dateiname (str): Der Name der Datei, in die der Inhalt
+                                 geschrieben werden soll.
+                                 Standardmäßig 'kontext.txt'.
+        auszuschliessende_elemente (list[str]): Eine Liste von Dateinamen oder
+                                                Ordnernamen (Basisnamen), die
+                                                ausgeschlossen werden sollen.
+                                                Standardmäßig None.
     """
-    if exclude_items is None:
-        exclude_items = []
+    if auszuschliessende_elemente is None:
+        auszuschliessende_elemente = []
 
-    # Ensure the source directory exists
-    if not os.path.isdir(source_directory):
+    # Stelle sicher, dass das Quellverzeichnis existiert
+    if not os.path.isdir(quell_verzeichnis):
         print(
-            f"Error: Source directory '{source_directory}' does not exist.",
+            f"Fehler: Quellverzeichnis '{quell_verzeichnis}' existiert nicht.",
             file=sys.stderr,
         )
         return
 
-    # Add the output filename itself to the exclude list to prevent self-inclusion
-    if output_filename not in exclude_items:
-        exclude_items.append(output_filename)
+    # Füge den Ausgabedateinamen selbst zur Ausschlussliste hinzu, um
+    # eine Selbsteinbindung zu verhindern
+    if ausgabe_dateiname not in auszuschliessende_elemente:
+        auszuschliessende_elemente.append(ausgabe_dateiname)
 
-    print(f"Starting to create '{output_filename}' from '{source_directory}'...")
-    print(f"Excluding items: {exclude_items}")
-    if include_items is not None:
-        print(f"Including only items: {include_items}")
+    print(
+        f"Starte die Erstellung von '{ausgabe_dateiname}' aus '{quell_verzeichnis}'..."
+    )
+    print(f"Ausgeschlossene Elemente: {auszuschliessende_elemente}")
+    if einzuschliessende_elemente is not None:
+        print(
+            f"Es werden nur die folgenden Elemente eingeschlossen: {einzuschliessende_elemente}"
+        )
 
     try:
-        with open(output_filename, "w", encoding="utf-8", errors="ignore") as outfile:
-            outfile.write(context_head.strip() + "\n\n")
-            for root, dirs, files in os.walk(source_directory):
-                # Filter out excluded directories
-                dirs[:] = [d for d in dirs if d not in exclude_items]
+        with open(
+            ausgabe_dateiname, "w", encoding="utf-8", errors="ignore"
+        ) as ausgabe_datei:
+            ausgabe_datei.write(kontext_kopf.strip() + "\n\n")
+            for root, dirs, files in os.walk(quell_verzeichnis):
+                # Filtert ausgeschlossene Verzeichnisse heraus
+                dirs[:] = [d for d in dirs if d not in auszuschliessende_elemente]
 
-                for filename in files:
-                    is_included = (
-                        not (include_items is None) and filename in include_items
+                for dateiname in files:
+                    ist_enthalten = (
+                        not (einzuschliessende_elemente is None)
+                        and dateiname in einzuschliessende_elemente
                     )
                     if (
-                        is_included
-                        and filename not in exclude_items
-                        and filename.endswith(".py")
+                        ist_enthalten
+                        and dateiname not in auszuschliessende_elemente
+                        and dateiname.endswith(".py")
                     ):
-                        filepath = os.path.join(root, filename)
-                        # Skip if it's not a regular file (e.g., a symbolic link)
-                        if not os.path.isfile(filepath):
+                        dateipfad = os.path.join(root, dateiname)
+                        # Überspringe, wenn es keine reguläre Datei ist
+                        if not os.path.isfile(dateipfad):
                             continue
 
                         try:
-                            # Add a separator and the file path as a header
-                            outfile.write(f"\n--- FILE: {filepath} ---\n\n")
+                            # Füge einen Trennstrich und den Dateipfad als Header hinzu
+                            ausgabe_datei.write(f"\n--- DATEI: {dateipfad} ---\n\n")
                             with open(
-                                filepath, "r", encoding="utf-8", errors="ignore"
-                            ) as infile:
-                                outfile.write(infile.read())
-                            outfile.write("\n")  # Add a newline after file content
-                            print(f"  - Added: {filepath}")
+                                dateipfad, "r", encoding="utf-8", errors="ignore"
+                            ) as eingabe_datei:
+                                ausgabe_datei.write(eingabe_datei.read())
+                            ausgabe_datei.write(
+                                "\n"
+                            )  # Füge nach dem Dateiinhalt eine neue Zeile hinzu
+                            print(f"  - Hinzugefügt: {dateipfad}")
                         except Exception as e:
                             print(
-                                f"  - Skipped (error reading): {filepath} - {e}",
+                                f"  - Übersprungen (Fehler beim Lesen): {dateipfad} - {e}",
                                 file=sys.stderr,
                             )
-            outfile.write(reminder.strip() + "\n\n")
-            print(f"\nSuccessfully created '{output_filename}'.")
+            ausgabe_datei.write(erinnerung.strip() + "\n\n")
+            print(f"\nErfolgreich '{ausgabe_dateiname}' erstellt.")
     except Exception as e:
-        print(f"Error creating output file '{output_filename}': {e}", file=sys.stderr)
+        print(
+            f"Fehler beim Erstellen der Ausgabedatei '{ausgabe_dateiname}': {e}",
+            file=sys.stderr,
+        )
 
 
-# --- Example Usage ---
+# --- Beispielverwendung ---
 if __name__ == "__main__":
-    # Define the directory you want to process (e.g., the current directory)
-    # You can change '.' to any other path like 'my_project_folder'
-    target_directory = (
+    # Definiere das Verzeichnis, das verarbeitet werden soll
+    # (z. B. das aktuelle Verzeichnis).
+    # Du kannst '.' durch einen anderen Pfad wie 'mein_projekt_ordner' ändern.
+    ziel_verzeichnis = (
         "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
     )
 
-    context_head = textwrap.dedent(
+    kontext_kopf = textwrap.dedent(
         """
         Ich soll so viel wie möglich die Funktionen von ehrapy benutzen: 
         https://github.com/theislab/ehrapy. Tutorials üeber ehrapy findest du hier:
@@ -100,46 +118,47 @@ if __name__ == "__main__":
 
         Meine Bachelorarbeit handelt von Niereninsuffiezienz in Kindern.
         Meine Daten findest du hier:
-        {file_heads}
+        {dateiköpfe}
 
-        {Anweisung}
+        {anweisung}
         """
     )
-    Anweisung = "Nutze lineare Regression."
-    reminder = textwrap.dedent(
+    anweisung = "Nutze lineare Regression."
+    erinnerung = textwrap.dedent(
         """
         Bitte antworte nur auf Deutsch.
         Antworte nur auf Basis der Informationen in diesem Kontext.
         """
     )
-    alten_code_nutzen = False
+    nutze_alten_code = False
 
-    file_heads = ""
-    for file in os.listdir(target_directory + "/Orginal Daten"):
-        filepath = os.path.join(target_directory + "/Orginal Daten", file)
-        if filepath.endswith(".csv"):
-            # read first 5 lines of the csv file
-            data_head = ""
+    dateikoepfe = ""
+    for datei in os.listdir(ziel_verzeichnis + "/Orginal Daten"):
+        dateipfad = os.path.join(ziel_verzeichnis + "/Orginal Daten", datei)
+        if dateipfad.endswith(".csv"):
+            # Lese die ersten 5 Zeilen der CSV-Datei
+            daten_kopf = ""
             with open(
-                filepath,
+                dateipfad,
                 "r",
                 errors="ignore",
-            ) as infile:
+            ) as eingabe_datei:
                 for _ in range(5):
-                    line = infile.readline()
-                    if not line:
+                    zeile = eingabe_datei.readline()
+                    if not zeile:
                         break
-                    data_head += line
+                    daten_kopf += zeile
 
-            file_heads += f"\n--- FILE: {filepath} ---\n\n"
-            file_heads += data_head + "\n"
+            dateikoepfe += f"\n--- DATEI: {dateipfad} ---\n\n"
+            dateikoepfe += daten_kopf + "\n"
 
-    # Define files or folders to exclude
-    # 'context.txt' is automatically excluded to prevent self-inclusion
-    # Add other files/folders like 'venv', '__pycache__', '.git', 'my_secret_file.txt'
-    if alten_code_nutzen:
-        included_items = None
-        excluded_items = [
+    # Definiere Dateien oder Ordner, die ausgeschlossen werden sollen
+    # 'kontext.txt' wird automatisch ausgeschlossen, um eine Selbsteinbindung
+    # zu verhindern.
+    # Füge andere Dateien/Ordner hinzu, wie 'venv', '__pycache__', '.git'
+    if nutze_alten_code:
+        einzuschliessende_elemente = None
+        auszuschliessende_elemente = [
             "__pycache__",
             ".git",
             ".DS_Store",
@@ -154,13 +173,13 @@ if __name__ == "__main__":
             "Original Daten",
         ]
     else:
-        included_items = []
-        excluded_items = []
+        einzuschliessende_elemente = []
+        auszuschliessende_elemente = []
 
-    create_context_file(
-        source_directory=target_directory,
-        context_head=context_head.format(file_heads=file_heads, Anweisung=Anweisung),
-        reminder=reminder,
-        exclude_items=excluded_items,
-        include_items=included_items,
+    erstelle_kontext_datei(
+        quell_verzeichnis=ziel_verzeichnis,
+        kontext_kopf=kontext_kopf.format(dateiköpfe=dateikoepfe, anweisung=anweisung),
+        erinnerung=erinnerung,
+        auszuschliessende_elemente=auszuschliessende_elemente,
+        einzuschliessende_elemente=einzuschliessende_elemente,
     )

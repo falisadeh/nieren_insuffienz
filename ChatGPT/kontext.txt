@@ -2,10 +2,11 @@ Ich soll so viel wie möglich die Funktionen von ehrapy benutzen:
 https://github.com/theislab/ehrapy. Tutorials üeber ehrapy findest du hier:
 https://github.com/theislab/ehrapy-tutorials. Mache dich damit vertraut.
 
-Meine Bachelorarbeit handelt von Niereninsuffiezienz in Kindern.
-Meine Daten findest du hier:
+Meine Bachelorarbeit handelt von Wie effektiv unterstützt das Framework ehrapy die Identifikation
+von Risikofaktoren für akutes Nierenversagen bei Kindern 
+nach Herzoperationen anhand eines angereicherten Routinedatensatzes?
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/VIS.csv ---
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/VIS.csv ---
 
 ﻿PMID;SMID;Timestamp;vis
 300009;300009001;2152-10-22 14:55:00.000;0.000
@@ -14,7 +15,7 @@ Meine Daten findest du hier:
 300009;300009001;2152-10-23 17:40:07.000;6.790
 
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Laboratory_Kreatinin+CystatinC.csv ---
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/Laboratory_Kreatinin+CystatinC.csv ---
 
 ﻿PMID;SMID;CollectionTimestamp;Parameter;QuantitativeValue;LaborPanelID;SpecimenID;Unit;LOINC;Ward;Ward_Type
 300009;300009001;2152-10-20 11:10:00.000;S-Creat/enz;28;300576393;300829936KCH;µmol/l;14682-9;J;Pediatric Cardiology
@@ -23,7 +24,7 @@ Meine Daten findest du hier:
 300009;300009001;2152-10-24 14:55:00.000;S-Creat/enz;89;300048801;300918457KCH;µmol/l;14682-9;G;Interdisciplinary pediatric intensive care unit
 
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/AKI Label.csv ---
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/AKI Label.csv ---
 
 ﻿PMID;Duartion;Start;End;Decision
 300009;181020000;2152-10-23 23:47:00.000;2152-10-26 02:04:00.000;AKI 2
@@ -32,7 +33,7 @@ Meine Daten findest du hier:
 300012;1209300000;2153-05-17 00:43:00.000;2153-05-31 00:38:00.000;AKI 1
 
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Patient Master Data.csv ---
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/Patient Master Data.csv ---
 
 ﻿PMID;Sex;DateOfBirth;DateOfDie
 300009;f;2152-03-31 00:00:00.000;NULL
@@ -41,7 +42,7 @@ Meine Daten findest du hier:
 300016;m;2151-05-31 00:00:00.000;NULL
 
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Procedure Supplement.csv ---
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/Procedure Supplement.csv ---
 
 ﻿PMID;SMID;TimestampName;Timestamp;Procedure_ID
 300009;300009001;AZPFLVORV;2152-10-23 09:41:00.000;300004306
@@ -50,7 +51,7 @@ Meine Daten findest du hier:
 300009;300009001;Surgery preparation from;2152-10-23 10:07:00.000;300004306
 
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/HLM Operationen.csv ---
+--- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/HLM Operationen.csv ---
 
 ﻿PMID;SMID;Procedure_ID;Start of surgery;End of surgery;Tx?
 300009;300009001;300004306;2152-10-23 11:34:00.000;2152-10-23 17:20:00.000;NULL
@@ -59,91 +60,37 @@ Meine Daten findest du hier:
 300016;300016001;300004436;2157-05-02 09:52:00.000;2157-05-02 12:33:00.000;NULL
 
 
+1- LOINC:Medizinische Messwerte lassen sich theoretisch standardisieren. Um das zu dokumentieren, wird LOINC (https://loinc.org/) verwendet.
+2- QuantitativeValue ist der tatsächliche Messwert für diesen Laborwert. Die Specimen ID identifiziert die Probe aus der der Messwert genommen wurde.
+alle Werte, die die selbe SpecimenID haben, kommen bspw. aus derselben Blutprobe. 
+Wenn einem Patienten Proben entnommen werden, bspw. Blut mit einer eigenen SpecimenID, dann Speichel mit einer anderen SpecimenID und dann noch mal ein venöses Blut mit einer dritten SpecimenID, 
+können die aber zeitgleich in einem sogenannten Panel untersucht werden. Um dieses Panel zu identifizieren, gibt es die LaborPanelID.
+3- CollectionTimestamp: Das entspricht dem Zeitpunkt der Entnahme.Laborproben zeitlich VOR und NACH der HLM OP.
+Diese Messwerte könnte man als „Baseline“ also als Ausgangswert/Referenzwert vor der OP sehen
+4- Vis berechnet Vasoactive Inotropic Score
+5- PMID: Das ist der PatientMasterIndex
+6- Duration: Das ist die Dauer der AKI Episode in Millisekunden
+7- Start: Das ist der Startzeitpunkt der jeweiligen AKI Episode
+8- End: Das Ende der jeweiligen AKI Episode
+9- Decision: Das ist die jeweilige Information, welches Stadium / Grading des AKI hier gelabelt wurde. Also: Von Startzeitpunkt bis Endzeitpunkt besteht das AKI der Decision-Spalte. 
+Außerhalb dieses Zeitraum besteht kein AKI. Patienten, die in dieser Tabelle nicht aufgeführt sind, haben KEIN AKI. Also, wenn es einen Patienten gibt, der zwar in den anderen Datentabellen enthalten ist, aber hier nicht in dieser Datei, dann muss das so sein, weil dieser Patient kein AKI hat.
+10- HLM Operationen.csv: a) PMID: PatientMasterIndx. b) SMID: StayMasterIndex. Die SMID ist immer eine 9-stellige Zahl: Die ersten 6 Stellen ist die PMID des Patienten + eine fortlaufende 3-stellige Zahl die, die Aufenthalte aufzählt. Also Wenn Patient 300001 den ersten Aufenthalt hat, wird die PMID 300001 um 001 ergänzt = 300001001. Der zweite Aufenthalt wäre dann PMID + 002: 300001002 undso weiter. Das heißt, wenn du mal eine SMID findest, 
+die auf 009 endet, weißt du, dass das der 9. Aufenthalt des Patienten im Datensatz ist. (Aber Achtung, nicht alle diese Fälle enthalten eine HLM-OP).
+Ein Patient hat mindestens 1 Aufenthalt (=SMID), kann aber theoretisch beliebig viele Aufenthalte / SMIDs haben. Wenn ein Patient mehrere OPs hat, kann man über die SMID die jeweiligen Daten der anderen Tabellen später dem korrekten Fall zuordnen.
+11- Procedure_ID: Das ist eine eindeutige ID für eine HLM-Operation in der Kohorte. Damit können weitere Informationen zB aus der Datei Procedure Supplement.csv der Operation zugeordnet werden. Grundsätzlich könnte man diese Information auch über die PMID oder SMID zuordnen. Aber es könnte ja sein, dass ein Patient innerhalb eines Aufenthaltes zwei oder mehrere HLM-OPs hat, dann kann man das einfacher über die Procedure_ID zuordnen.
+12- Start of surgery: Startzeitpunkt der OP. 
+13- End of surgery: Endzeitpunkt der OP 
+14- Tx?: Das ist eine Information, ob die Operation eine Herz- oder Lungentransplantation war. Wenn „Tx“, dann war die Operation eine Transplantation, wenn „NULL“ nicht. Ich denke diese Spalte ist erst mal nicht super wichtig für dich, aber wenn interessant kann man berichten wie viele Transplantationen enthalten sind.
+15- Sex: Das Geschlecht des Patienten: f=female, m=male
+16- DateofBirth: Geburtsdatum des Patienten
+17- DateofDie: Sterbedatum des Patienten, wenn bekannt. Wenn NULL, gehen wir davon aus, dass der Patient noch lebt bzw. nicht im Krankenhaus verstorben ist.
+18- Procedure Supplement.csv: Weitere zeitliche Informationen zu den OPs. Ich weiß, hier sind einige seltsame Inhalte in der Spalte TimestampName wie „AZPFLVORV“. Solche Dinge sagen den Experten zwar etwas, für uns sind die erst mal egal. J Für die ersten Schritte ist diese Datei erst mal nicht super wichtig – ich würde diese Datei als letztes betrachten.
+19- TimestampName: Die Information was zu dem jeweiligen Zeitpunkt passiert ist. Also „Patient in OP aufgenommen“ oder „Start Anesthesia“
+20- Timestamp: Zeitpunkt zu dem das jeweils passiert ist.
+21- Procedure_ID: Das ist eine eindeutige ID für eine HLM-Operation in der Kohor
 
-Nutze lineare Regression.
 
-
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/src/daten.py ---
-
-import ehrapy as ep
-import pandas as pd
-
-# Laden der Daten aus den CSV-Dateien
-lab_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Laboratory_Kreatinin+CystatinC.csv",
-    sep=";",
-)
-aki_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/AKI Label.csv",
-    sep=";",
-)
-patient_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Patient Master Data.csv",
-    sep=";",
-)
-
-# IM MOMENT WERDEN DIESE DATEN NICHT EINGELESEN, PROBLEM LOESEN
-vis_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/VIS.csv",
-    sep=";",
-)
-procedure_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Procedure Supplement.csv",
-    sep=";",
-)
-hlm_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/HLM Operationen.csv",
-    sep=";",
-)
-
-# Zusammenführen der Daten (Beispiel: Laborwerte mit Patientendaten)
-# Die Daten müssen zunächst auf Patientenebene aggregiert werden,
-# da ehrapy AnnData-Objekte für Patienten (Zeilen) und Merkmale (Spalten) strukturiert.
-# Hier konzentrieren wir uns auf die Labordaten als Hauptmerkmal.
-merged_lab_patient_df = pd.merge(lab_df, patient_df, on="PMID", how="left")
-
-# Erstellen des AnnData-Objekts aus den zusammengeführten Daten
-# Wir müssen eine Tabelle erstellen, in der jede Zeile einem Patienten entspricht
-# und die Spalten die Merkmale sind, die wir für die Regression verwenden wollen.
-# Hier aggregieren wir die Labordaten nach PMID.
-# Dies ist ein kritischer Schritt, da Rohdaten pro Messung vorliegen.
-# Für eine einfache Regression benötigen wir aggregierte Werte pro Patient.
-# Beispielsweise der Durchschnittswert von Kreatinin.
-patient_avg_creatinin = (
-    merged_lab_patient_df.groupby("PMID")["QuantitativeValue"].mean().reset_index()
-)
-patient_avg_creatinin.rename(
-    columns={"QuantitativeValue": "Avg_Creatinin"}, inplace=True
-)
-
-# Jetzt können wir die Label und andere Patientendaten hinzufügen
-final_df = pd.merge(patient_avg_creatinin, aki_df, on="PMID", how="left")
-final_df = pd.merge(final_df, patient_df, on="PMID", how="left")
-
-# Erstellen des AnnData-Objekts
-# Die `ehrapy` Funktion `data.df_to_anndata()` ist hier nützlich.
-# Wir benötigen numerische Spalten für `X` und die Zielvariable für `y`.
-# Da unsere Zielvariable (`Decision`) kategorisch ist, müssen wir sie für eine lineare Regression umwandeln.
-# Für eine Klassifikation wäre dies besser geeignet, aber die Aufgabe verlangt eine lineare Regression.
-# Wir müssen die `Decision` Spalte in numerische Werte konvertieren (z.B. 'AKI 1' -> 1, 'AKI 2' -> 2, etc.)
-final_df["AKI_Severity"] = final_df["Decision"].str.extract("(\d)").astype(float)
-final_df = final_df.dropna(subset=["AKI_Severity"])
-
-# Erstellen des AnnData-Objekts
-# 'PMID' wird der Index, 'Avg_Creatinin' die Feature-Matrix
-adata = ep.data.df_to_anndata(
-    df=final_df,
-    columns_obs_only=["PMID", "Decision", "Sex", "DateOfBirth", "DateOfDie"],
-    index_column="PMID",
-)
-# Speichern der Zielvariablen im .obs-Attribut
-adata.obs["AKI_Severity"] = final_df.set_index("PMID")["AKI_Severity"]
-
-# Die Haupt-Feature-Matrix (X) sollte numerische Werte enthalten.
-# Die Spalte 'Avg_Creatinin' wird zu X.
-adata.X = final_df[["Avg_Creatinin"]].values
-
-print(adata)
+Erstelle eine Datei mit allen Daten und imputiere fehlende Werte. Speicher im Ordner Daten als h5ad Datei.
 
 Bitte antworte nur auf Deutsch.
 Antworte nur auf Basis der Informationen in diesem Kontext.

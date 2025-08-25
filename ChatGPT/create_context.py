@@ -111,52 +111,57 @@ if __name__ == "__main__":
     )
     nutze_alten_code = False
 
+    # --- CSV-Kopfzeilen aus dem Unterordner "Original Daten" einsammeln ---
+    original_daten_pfad = os.path.join(ziel_verzeichnis, "Original Daten")
     dateikoepfe = ""
-    for datei in os.listdir(ziel_verzeichnis + "/Orginal Daten"):
-        dateipfad = os.path.join(ziel_verzeichnis + "/Orginal Daten", datei)
-        if dateipfad.endswith(".csv"):
-            # Lese die ersten 5 Zeilen der CSV-Datei
-            daten_kopf = ""
-            with open(
-                dateipfad,
-                "r",
-                errors="ignore",
-            ) as eingabe_datei:
-                for _ in range(5):
-                    zeile = eingabe_datei.readline()
-                    if not zeile:
-                        break
-                    daten_kopf += zeile
-
-            dateikoepfe += f"\n--- DATEI: {dateipfad} ---\n\n"
-            dateikoepfe += daten_kopf + "\n"
+    if os.path.isdir(original_daten_pfad):
+        for datei in os.listdir(original_daten_pfad):
+            dateipfad = os.path.join(original_daten_pfad, datei)
+            if os.path.isfile(dateipfad) and dateipfad.lower().endswith(".csv"):
+                daten_kopf = ""
+                try:
+                    with open(dateipfad, "r", errors="ignore") as f:
+                        for _ in range(5):
+                            zeile = f.readline()
+                            if not zeile:
+                                break
+                            daten_kopf += zeile
+                except Exception as e:
+                    print(
+                        f"Warnung: Konnte Kopf von {dateipfad} nicht lesen: {e}",
+                        file=sys.stderr,
+                    )
+                    continue
+                dateikoepfe += f"\n--- DATEI: {dateipfad} ---\n\n{daten_kopf}\n"
+    else:
+        print(f"Hinweis: Unterordner fehlt: {original_daten_pfad}", file=sys.stderr)
 
     # Definiere Dateien oder Ordner, die ausgeschlossen werden sollen
     # 'kontext.txt' wird automatisch ausgeschlossen, um eine Selbsteinbindung
     # zu verhindern.
     # Füge andere Dateien/Ordner hinzu, wie 'venv', '__pycache__', '.git'
     if nutze_alten_code:
-        einzuschliessende_elemente = None
-        auszuschliessende_elemente = [
-            "__pycache__",
-            ".git",
-            ".DS_Store",
-            ".gitignore",
-            "ChatGPT",
-            "Archiv",
-            "Audit",
-            "Daten",
-            "Diagramme",
-            "h5ad",
-            "Word\ und\ Text",
-            "Original Daten",
-        ]
+        einzuschliessende_elemente = None  # Alle .py Dateien einschließen
     else:
         # MAMA CODE HINZUFUEGEN
         einzuschliessende_elemente = [
             # "daten.py",
-        ]
-        auszuschliessende_elemente = []
+        ]  # Nur diese Dateien einschließen
+
+    auszuschliessende_elemente = [
+        "__pycache__",
+        ".git",
+        ".DS_Store",
+        ".gitignore",
+        "ChatGPT",
+        "Archiv",
+        "Audit",
+        "Daten",
+        "Diagramme",
+        "h5ad",
+        "Word\ und\ Text",
+        "Original Daten",
+    ]
 
     # MAMA AENDERN
     kontext_kopf = textwrap.dedent(
@@ -165,12 +170,40 @@ if __name__ == "__main__":
         https://github.com/theislab/ehrapy. Tutorials üeber ehrapy findest du hier:
         https://github.com/theislab/ehrapy-tutorials. Mache dich damit vertraut.
 
-        Meine Bachelorarbeit handelt von Niereninsuffiezienz in Kindern.
-        Meine Daten findest du hier:
+        Meine Bachelorarbeit handelt von Wie effektiv unterstützt das Framework ehrapy die Identifikation
+        von Risikofaktoren für akutes Nierenversagen bei Kindern 
+        nach Herzoperationen anhand eines angereicherten Routinedatensatzes?
         {dateiköpfe}
+        1- LOINC:Medizinische Messwerte lassen sich theoretisch standardisieren. Um das zu dokumentieren, wird LOINC (https://loinc.org/) verwendet.
+        2- QuantitativeValue ist der tatsächliche Messwert für diesen Laborwert. Die Specimen ID identifiziert die Probe aus der der Messwert genommen wurde.
+        alle Werte, die die selbe SpecimenID haben, kommen bspw. aus derselben Blutprobe. 
+        Wenn einem Patienten Proben entnommen werden, bspw. Blut mit einer eigenen SpecimenID, dann Speichel mit einer anderen SpecimenID und dann noch mal ein venöses Blut mit einer dritten SpecimenID, 
+        können die aber zeitgleich in einem sogenannten Panel untersucht werden. Um dieses Panel zu identifizieren, gibt es die LaborPanelID.
+        3- CollectionTimestamp: Das entspricht dem Zeitpunkt der Entnahme.Laborproben zeitlich VOR und NACH der HLM OP.
+        Diese Messwerte könnte man als „Baseline“ also als Ausgangswert/Referenzwert vor der OP sehen
+        4- Vis berechnet Vasoactive Inotropic Score
+        5- PMID: Das ist der PatientMasterIndex
+        6- Duration: Das ist die Dauer der AKI Episode in Millisekunden
+        7- Start: Das ist der Startzeitpunkt der jeweiligen AKI Episode
+        8- End: Das Ende der jeweiligen AKI Episode
+        9- Decision: Das ist die jeweilige Information, welches Stadium / Grading des AKI hier gelabelt wurde. Also: Von Startzeitpunkt bis Endzeitpunkt besteht das AKI der Decision-Spalte. 
+        Außerhalb dieses Zeitraum besteht kein AKI. Patienten, die in dieser Tabelle nicht aufgeführt sind, haben KEIN AKI. Also, wenn es einen Patienten gibt, der zwar in den anderen Datentabellen enthalten ist, aber hier nicht in dieser Datei, dann muss das so sein, weil dieser Patient kein AKI hat.
+        10- HLM Operationen.csv: a) PMID: PatientMasterIndx. b) SMID: StayMasterIndex. Die SMID ist immer eine 9-stellige Zahl: Die ersten 6 Stellen ist die PMID des Patienten + eine fortlaufende 3-stellige Zahl die, die Aufenthalte aufzählt. Also Wenn Patient 300001 den ersten Aufenthalt hat, wird die PMID 300001 um 001 ergänzt = 300001001. Der zweite Aufenthalt wäre dann PMID + 002: 300001002 undso weiter. Das heißt, wenn du mal eine SMID findest, 
+        die auf 009 endet, weißt du, dass das der 9. Aufenthalt des Patienten im Datensatz ist. (Aber Achtung, nicht alle diese Fälle enthalten eine HLM-OP).
+        Ein Patient hat mindestens 1 Aufenthalt (=SMID), kann aber theoretisch beliebig viele Aufenthalte / SMIDs haben. Wenn ein Patient mehrere OPs hat, kann man über die SMID die jeweiligen Daten der anderen Tabellen später dem korrekten Fall zuordnen.
+        11- Procedure_ID: Das ist eine eindeutige ID für eine HLM-Operation in der Kohorte. Damit können weitere Informationen zB aus der Datei Procedure Supplement.csv der Operation zugeordnet werden. Grundsätzlich könnte man diese Information auch über die PMID oder SMID zuordnen. Aber es könnte ja sein, dass ein Patient innerhalb eines Aufenthaltes zwei oder mehrere HLM-OPs hat, dann kann man das einfacher über die Procedure_ID zuordnen.
+        12- Start of surgery: Startzeitpunkt der OP. 
+        13- End of surgery: Endzeitpunkt der OP 
+        14- Tx?: Das ist eine Information, ob die Operation eine Herz- oder Lungentransplantation war. Wenn „Tx“, dann war die Operation eine Transplantation, wenn „NULL“ nicht. Ich denke diese Spalte ist erst mal nicht super wichtig für dich, aber wenn interessant kann man berichten wie viele Transplantationen enthalten sind.
+        15- Sex: Das Geschlecht des Patienten: f=female, m=male
+        16- DateofBirth: Geburtsdatum des Patienten
+        17- DateofDie: Sterbedatum des Patienten, wenn bekannt. Wenn NULL, gehen wir davon aus, dass der Patient noch lebt bzw. nicht im Krankenhaus verstorben ist.
+        18- Procedure Supplement.csv: Weitere zeitliche Informationen zu den OPs. Ich weiß, hier sind einige seltsame Inhalte in der Spalte TimestampName wie „AZPFLVORV“. Solche Dinge sagen den Experten zwar etwas, für uns sind die erst mal egal. J Für die ersten Schritte ist diese Datei erst mal nicht super wichtig – ich würde diese Datei als letztes betrachten.
+        19- TimestampName: Die Information was zu dem jeweiligen Zeitpunkt passiert ist. Also „Patient in OP aufgenommen“ oder „Start Anesthesia“
+        20- Timestamp: Zeitpunkt zu dem das jeweils passiert ist.
+        21- Procedure_ID: Das ist eine eindeutige ID für eine HLM-Operation in der Kohor
 
-        Vis ist ein Blutwert, der in meiner Arbeit keine Rolle spielt.
-
+        
         {anweisung}
         """
     )

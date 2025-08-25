@@ -8,7 +8,7 @@ def create_context_file(
     context_head: str,
     reminder: str,
     source_directory: str,
-    output_filename: str = "context.txt",
+    output_filename: str = "ChatGPT/context.txt",
     include_items: list[str] | None = None,
     exclude_items: list[str] | None = None,
 ) -> None:
@@ -40,6 +40,8 @@ def create_context_file(
 
     print(f"Starting to create '{output_filename}' from '{source_directory}'...")
     print(f"Excluding items: {exclude_items}")
+    if include_items is not None:
+        print(f"Including only items: {include_items}")
 
     try:
         with open(output_filename, "w", encoding="utf-8", errors="ignore") as outfile:
@@ -49,7 +51,14 @@ def create_context_file(
                 dirs[:] = [d for d in dirs if d not in exclude_items]
 
                 for filename in files:
-                    if filename not in exclude_items and filename.endswith(".py"):
+                    is_included = (
+                        not (include_items is None) and filename in include_items
+                    )
+                    if (
+                        is_included
+                        and filename not in exclude_items
+                        and filename.endswith(".py")
+                    ):
                         filepath = os.path.join(root, filename)
                         # Skip if it's not a regular file (e.g., a symbolic link)
                         if not os.path.isfile(filepath):
@@ -106,15 +115,14 @@ if __name__ == "__main__":
     alten_code_nutzen = False
 
     file_heads = ""
-    for file in os.listdir(target_directory + "/Original Daten"):
-        filepath = os.path.join(target_directory + "/Original Daten", file)
+    for file in os.listdir(target_directory + "/Orginal Daten"):
+        filepath = os.path.join(target_directory + "/Orginal Daten", file)
         if filepath.endswith(".csv"):
             # read first 5 lines of the csv file
             data_head = ""
             with open(
                 filepath,
                 "r",
-                encoding="utf-8",
                 errors="ignore",
             ) as infile:
                 for _ in range(5):
@@ -147,10 +155,11 @@ if __name__ == "__main__":
         ]
     else:
         included_items = []
+        excluded_items = []
 
     create_context_file(
-        source_directory=target_directory.format,
-        context_head=context_head.format(Anweisung),
+        source_directory=target_directory,
+        context_head=context_head.format(file_heads=file_heads, Anweisung=Anweisung),
         reminder=reminder,
         exclude_items=excluded_items,
         include_items=included_items,

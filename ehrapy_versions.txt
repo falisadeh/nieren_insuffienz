@@ -1,1 +1,0 @@
-ep.print_versions() fehlgeschlagen. Grund: ModuleNotFoundError("No module named 'ehrapy'")Python: 3.11.13

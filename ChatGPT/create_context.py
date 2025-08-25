@@ -9,6 +9,7 @@ def create_context_file(
     reminder: str,
     source_directory: str,
     output_filename: str = "context.txt",
+    include_items: list[str] | None = None,
     exclude_items: list[str] | None = None,
 ) -> None:
     """
@@ -90,6 +91,7 @@ if __name__ == "__main__":
 
         Meine Bachelorarbeit handelt von Niereninsuffiezienz in Kindern.
         Meine Daten findest du hier:
+        {file_heads}
 
         {Anweisung}
         """
@@ -101,27 +103,55 @@ if __name__ == "__main__":
         Antworte nur auf Basis der Informationen in diesem Kontext.
         """
     )
+    alten_code_nutzen = False
+
+    file_heads = ""
+    for file in os.listdir(target_directory + "/Original Daten"):
+        filepath = os.path.join(target_directory + "/Original Daten", file)
+        if filepath.endswith(".csv"):
+            # read first 5 lines of the csv file
+            data_head = ""
+            with open(
+                filepath,
+                "r",
+                encoding="utf-8",
+                errors="ignore",
+            ) as infile:
+                for _ in range(5):
+                    line = infile.readline()
+                    if not line:
+                        break
+                    data_head += line
+
+            file_heads += f"\n--- FILE: {filepath} ---\n\n"
+            file_heads += data_head + "\n"
 
     # Define files or folders to exclude
     # 'context.txt' is automatically excluded to prevent self-inclusion
     # Add other files/folders like 'venv', '__pycache__', '.git', 'my_secret_file.txt'
-    excluded_items = [
-        "__pycache__",
-        ".git",
-        ".DS_Store",
-        ".gitignore",
-        "ChatGPT",
-        "Archiv",
-        "Audit",
-        "Daten",
-        "Diagramme",
-        "h5ad",
-        "Word\ und\ Text",
-    ]
+    if alten_code_nutzen:
+        included_items = None
+        excluded_items = [
+            "__pycache__",
+            ".git",
+            ".DS_Store",
+            ".gitignore",
+            "ChatGPT",
+            "Archiv",
+            "Audit",
+            "Daten",
+            "Diagramme",
+            "h5ad",
+            "Word\ und\ Text",
+            "Original Daten",
+        ]
+    else:
+        included_items = []
 
     create_context_file(
-        source_directory=target_directory,
+        source_directory=target_directory.format,
         context_head=context_head.format(Anweisung),
         reminder=reminder,
         exclude_items=excluded_items,
+        include_items=included_items,
     )

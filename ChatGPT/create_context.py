@@ -4,6 +4,9 @@ import textwrap
 
 
 def create_context_file(
+    *,
+    context_head: str,
+    reminder: str,
     source_directory: str,
     output_filename: str = "context.txt",
     exclude_items: list[str] | None = None,
@@ -39,12 +42,13 @@ def create_context_file(
 
     try:
         with open(output_filename, "w", encoding="utf-8", errors="ignore") as outfile:
+            outfile.write(context_head.strip() + "\n\n")
             for root, dirs, files in os.walk(source_directory):
                 # Filter out excluded directories
                 dirs[:] = [d for d in dirs if d not in exclude_items]
 
                 for filename in files:
-                    if filename not in exclude_items:
+                    if filename not in exclude_items and filename.endswith(".py"):
                         filepath = os.path.join(root, filename)
                         # Skip if it's not a regular file (e.g., a symbolic link)
                         if not os.path.isfile(filepath):
@@ -64,6 +68,7 @@ def create_context_file(
                                 f"  - Skipped (error reading): {filepath} - {e}",
                                 file=sys.stderr,
                             )
+            outfile.write(reminder.strip() + "\n\n")
             print(f"\nSuccessfully created '{output_filename}'.")
     except Exception as e:
         print(f"Error creating output file '{output_filename}': {e}", file=sys.stderr)
@@ -73,7 +78,9 @@ def create_context_file(
 if __name__ == "__main__":
     # Define the directory you want to process (e.g., the current directory)
     # You can change '.' to any other path like 'my_project_folder'
-    target_directory = ".."
+    target_directory = (
+        "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+    )
 
     context_head = textwrap.dedent(
         """
@@ -81,7 +88,17 @@ if __name__ == "__main__":
         https://github.com/theislab/ehrapy. Tutorials üeber ehrapy findest du hier:
         https://github.com/theislab/ehrapy-tutorials. Mache dich damit vertraut.
 
-        
+        Meine Bachelorarbeit handelt von Niereninsuffiezienz in Kindern.
+        Meine Daten findest du hier:
+
+        {Anweisung}
+        """
+    )
+    Anweisung = "Nutze lineare Regression."
+    reminder = textwrap.dedent(
+        """
+        Bitte antworte nur auf Deutsch.
+        Antworte nur auf Basis der Informationen in diesem Kontext.
         """
     )
 
@@ -93,7 +110,7 @@ if __name__ == "__main__":
         ".git",
         ".DS_Store",
         ".gitignore",
-        "Diagramme",
+        "ChatGPT",
         "Archiv",
         "Audit",
         "Daten",
@@ -102,4 +119,9 @@ if __name__ == "__main__":
         "Word\ und\ Text",
     ]
 
-    create_context_file(target_directory, exclude_items=excluded_items)
+    create_context_file(
+        source_directory=target_directory,
+        context_head=context_head.format(Anweisung),
+        reminder=reminder,
+        exclude_items=excluded_items,
+    )

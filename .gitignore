@@ -1,6 +1,5 @@
 .DS_Store
 __pycache__/
-*.csv
 *.log
 .vscode/
 venv/
@@ -11,5 +10,3 @@ Daten
 h5ad
 Word\ und\ Text
 ChatGPT/context.txt
-
-!Original\ Daten/*.csv

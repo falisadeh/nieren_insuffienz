@@ -90,7 +90,7 @@ Ein Patient hat mindestens 1 Aufenthalt (=SMID), kann aber theoretisch beliebig 
 21- Procedure_ID: Das ist eine eindeutige ID für eine HLM-Operation in der Kohor
 
 
-Erstelle eine Datei mit allen Daten und imputiere fehlende Werte. Speicher im Ordner Daten als h5ad Datei.
+Erstelle eine Datei mit allen Daten in ehrapy und imputiere fehlende Werte. Speicher im Ordner Daten als h5ad Datei.
 
 Bitte antworte nur auf Deutsch.
 Antworte nur auf Basis der Informationen in diesem Kontext.

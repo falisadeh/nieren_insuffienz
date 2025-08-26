@@ -207,7 +207,7 @@ if __name__ == "__main__":
         {anweisung}
         """
     )
-    anweisung = "Erstelle eine Datei mit allen Daten und imputiere fehlende Werte. Speicher im Ordner Daten als h5ad Datei."
+    anweisung = "Erstelle eine Datei mit allen Daten in ehrapy und imputiere fehlende Werte. Speicher im Ordner Daten als h5ad Datei."
     erinnerung = textwrap.dedent(
         """
         Bitte antworte nur auf Deutsch.

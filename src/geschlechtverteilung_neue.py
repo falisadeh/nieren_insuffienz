@@ -250,7 +250,7 @@ def map_sex(x):
     import numpy as np
 
     if pd.isna(x):
-        return np.nan
+        return np.nan13
     s = str(x).strip().lower()
     if s in {"m", "male", "mann", "männlich", "1"}:
         return "Männlich"

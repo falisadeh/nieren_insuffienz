@@ -129,3 +129,29 @@ print(
     "* Wenn man PMIDs in der OP-Tabelle per SMID aus HLM nachfüllt, erhält man wieder die volle Zahl "
     "(≈ Patienten aus HLM, z. B. 1.067)."
 )
+import pandas as pd
+
+# HLM laden, wie in deinem Audit:
+# hlm = read_semicolon(CSV_HLM); hlm["PMID_norm"]=..., hlm["SMID_norm"]=...
+
+print("Zeilen gesamt:", len(hlm))
+print("Eindeutige Procedure_ID:", hlm["Procedure_ID"].nunique())
+print("Eindeutige SMID:", hlm["SMID_norm"].nunique())
+print("SMID NaN:", hlm["SMID_norm"].isna().sum())
+
+# Wie viele SMIDs kommen mehrfach vor?
+counts = hlm["SMID_norm"].value_counts(dropna=True)
+print("SMIDs mit >1 Zeile:", (counts > 1).sum())
+
+# Beispiel: die Top-Mehrfache
+print(counts.head(10))
+
+# Prüfen: ist Procedure_ID wirklich 1:1?
+dupe_proc = hlm["Procedure_ID"].duplicated().sum()
+print("Doppelte Procedure_ID (sollte 0 sein):", dupe_proc)
+
+# Haben Mehrfach-SMIDs unterschiedliche Procedure_IDs?
+multi = hlm[hlm["SMID_norm"].isin(counts[counts > 1].index)]
+pairs_per_smid = multi.groupby("SMID_norm")["Procedure_ID"].nunique().value_counts()
+print("Anzahl distinct Procedure_ID pro SMID (Verteilung):")
+print(pairs_per_smid.head())

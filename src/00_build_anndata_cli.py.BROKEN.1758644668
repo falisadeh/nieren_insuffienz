@@ -297,25 +297,12 @@ def link_aki_to_ops(df_ops: pd.DataFrame, df_aki: Optional[pd.DataFrame]) -> pd.
         return ops
 
 
-
-def merge_patients(df_ops: pd.DataFrame, df_pat: pd.DataFrame) -> pd.DataFrame:
-    """Fügt Patientenattribute (PATIENTS) per PMID an OPs an. Beibehaltung aller OP-Zeilen."""
-    ops = df_ops.copy()
-    pat = df_pat.copy()
-
-    if "PMID" in ops.columns:
-        ops["PMID"] = ops["PMID"].astype(str)
-    if "PMID" in pat.columns:
-        pat["PMID"] = pat["PMID"].astype(str)
-
-    # Nur zusätzliche Spalten aus PATIENTS anhängen (PMID nicht duplizieren, bestehende in OPS nicht überschreiben)
-    add_cols = [c for c in pat.columns if c != "PMID" and c not in ops.columns]
-    if add_cols:
-        merged = ops.merge(pat[["PMID"] + add_cols], on="PMID", how="left", sort=False)
-    else:
-        merged = ops
-
-    return merged
+def merge_patients(df_ops: pd.DataFrame, df_pat: pd.DataFrame) -> pd.DataFrame:(df_ops: pd.DataFrame, df_pat: pd.DataFrame) -> pd.DataFrame:(df_ops: pd.DataFrame, df_pat: pd.DataFrame) -> pd.DataFrame:
+    df = df_ops.merge(df_pat, on="PMID", how="left")
+    df["age_years_at_op"] = _age_years(df["Surgery_Start"], df["DateOfBirth"])  # type: ignore
+    df["age_days_at_op"] = (df["Surgery_Start"] - df["DateOfBirth"]).dt.days
+    df["age_group"] = _age_group(df["age_years_at_op"])  # type: ignore
+    return df
 
 
 def merge_features(df_ops: pd.DataFrame, feature_paths: Iterable[str | Path]) -> pd.DataFrame:

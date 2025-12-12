@@ -2,9 +2,11 @@
 __pycache__/
 *.log
 *.csv
+*.png
+*.docx
 .vscode/
 venv/
-Diagramme
+Diagramme/*
 Archiv
 Audit
 Daten

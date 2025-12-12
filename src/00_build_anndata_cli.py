@@ -1,4 +1,26 @@
 #!/usr/bin/env python3
+# -----------------------------------------------------------------------------
+# Datensatz bauen (Standard-Workflow):
+#   ./scripts/2_build_dataset.sh
+#
+# Direkt (ohne Skript):
+#   conda activate ehrapy_ml
+#   python src/00_build_anndata_cli.py \
+#     --ops "HLM Operationen.csv" \
+#     --patients "Patient Master Data.csv" \
+#     --aki "AKI Label.csv" \
+#     --out "h5ad/ops_with_age_groups.h5ad"
+#
+# Mit Featurematrix (.X):
+#   python src/00_build_anndata_cli.py \
+#     --ops "HLM Operationen.csv" \
+#     --patients "Patient Master Data.csv" \
+#     --aki "AKI Label.csv" \
+#     --features "Daten/ops_with_crea_cysc_vis_features.csv" \
+#     --x-features crea_delta_0_48 crea_rate_0_48 vis_auc_0_24 vis_auc_0_48 duration_minutes \
+#     --out "h5ad/ops_ml_processed.h5ad"
+# -----------------------------------------------------------------------------
+
 """
 Build or update a clinician‑friendly AnnData (.h5ad) from hospital CSVs.
 
@@ -58,7 +80,10 @@ import anndata as ad
 # Utils
 # ------------------------------
 
-def _read_csv_robust(path: str | Path, dtype_map: Optional[dict] = None) -> pd.DataFrame:
+
+def _read_csv_robust(
+    path: str | Path, dtype_map: Optional[dict] = None
+) -> pd.DataFrame:
     """Robust CSV reader: auto‑detect sep, handle UTF‑8‑SIG, keep IDs as strings.
     Falls sep nicht erkannt wird, probiere Standardtrennzeichen.
     """
@@ -66,7 +91,9 @@ def _read_csv_robust(path: str | Path, dtype_map: Optional[dict] = None) -> pd.D
     if not p.exists():
         raise FileNotFoundError(f"Datei nicht gefunden: {p}")
     try:
-        df = pd.read_csv(p, sep=None, engine="python", encoding="utf-8-sig", dtype=dtype_map)
+        df = pd.read_csv(
+            p, sep=None, engine="python", encoding="utf-8-sig", dtype=dtype_map
+        )
     except Exception:
         for sep in [";", ",", "\t"]:
             try:
@@ -125,7 +152,9 @@ def _age_group(years: pd.Series) -> pd.Categorical:
         "Adolescents",
         "Unbekannt/außerhalb",
     ]
-    cat = pd.cut(years.fillna(-1), bins=bins, labels=labels, right=True, include_lowest=True)
+    cat = pd.cut(
+        years.fillna(-1), bins=bins, labels=labels, right=True, include_lowest=True
+    )
     cat = cat.astype("category")
     cat = cat.cat.reorder_categories(labels, ordered=True)
     return cat
@@ -145,6 +174,7 @@ def _make_unique_key(df: pd.DataFrame) -> pd.Series:
 # ------------------------------
 # Readers & transformers
 # ------------------------------
+
 
 def read_ops_table(path_ops: str | Path) -> pd.DataFrame:
     """Read operations table and standardize columns."""
@@ -169,7 +199,9 @@ def read_ops_table(path_ops: str | Path) -> pd.DataFrame:
     df["Surgery_Start"] = _to_dt(df["Surgery_Start"])  # type: ignore
     df["Surgery_End"] = _to_dt(df["Surgery_End"])  # type: ignore
     # Dauer
-    df["duration_minutes"] = (df["Surgery_End"] - df["Surgery_Start"]).dt.total_seconds() / 60.0
+    df["duration_minutes"] = (
+        df["Surgery_End"] - df["Surgery_Start"]
+    ).dt.total_seconds() / 60.0
     df["duration_hours"] = (df["duration_minutes"]) / 60.0
     # Sortierung & OP‑Index je Patient
     df = df.sort_values(["PMID", "Surgery_Start", "Surgery_End"]).reset_index(drop=True)
@@ -193,7 +225,10 @@ def read_patient_table(path_pat: str | Path) -> pd.DataFrame:
     if "DateOfDie" in df.columns:
         df["DateOfDie"] = _to_dt(df["DateOfDie"])  # type: ignore
     df["Sex_norm"] = df["Sex"].apply(_normalize_sex)
-    return df[["PMID", "Sex_norm", "DateOfBirth"] + (["DateOfDie"] if "DateOfDie" in df.columns else [])]
+    return df[
+        ["PMID", "Sex_norm", "DateOfBirth"]
+        + (["DateOfDie"] if "DateOfDie" in df.columns else [])
+    ]
 
 
 def read_aki_table(path_aki: str | Path) -> pd.DataFrame:
@@ -211,17 +246,19 @@ def read_aki_table(path_aki: str | Path) -> pd.DataFrame:
     if "Decision" in df.columns:
         # Textuelle Entscheidungen → normalisierte Klassen
         dec = df["Decision"].astype(str).str.strip().str.lower()
-        df["AKI_class"] = dec.replace({
-            "aki 1": "AKI 1",
-            "aki 2": "AKI 2",
-            "aki 3": "AKI 3",
-            "keine aki": "Keine AKI",
-            "nein": "Keine AKI",
-            "ja": "AKI",
-            "tx": "Tx",
-            "0": "Keine AKI",
-            "1": "AKI",
-        })
+        df["AKI_class"] = dec.replace(
+            {
+                "aki 1": "AKI 1",
+                "aki 2": "AKI 2",
+                "aki 3": "AKI 3",
+                "keine aki": "Keine AKI",
+                "nein": "Keine AKI",
+                "ja": "AKI",
+                "tx": "Tx",
+                "0": "Keine AKI",
+                "1": "AKI",
+            }
+        )
     # Datumsfelder
     for c in ["AKI_Start", "AKI_End"]:
         if c in df.columns:
@@ -229,7 +266,9 @@ def read_aki_table(path_aki: str | Path) -> pd.DataFrame:
     return df
 
 
-def link_aki_to_ops(df_ops: pd.DataFrame, df_aki: Optional[pd.DataFrame]) -> pd.DataFrame:
+def link_aki_to_ops(
+    df_ops: pd.DataFrame, df_aki: Optional[pd.DataFrame]
+) -> pd.DataFrame:
     """Zeitbasiertes Linking ohne merge_asof.
     Robuste Implementierung rein über int64‑Nanosekunden (keine NumPy‑Unit‑Konflikte).
     Bei Fehlern wird ein Warnhinweis ausgegeben und die AKI‑Felder leer gesetzt, statt den Build zu stoppen.
@@ -252,21 +291,32 @@ def link_aki_to_ops(df_ops: pd.DataFrame, df_aki: Optional[pd.DataFrame]) -> pd.
 
         aki["PMID"] = aki["PMID"].astype(str)
         aki["AKI_Start"] = pd.to_datetime(aki["AKI_Start"], errors="coerce")
-        aki = aki.dropna(subset=["AKI_Start"]).sort_values(["PMID", "AKI_Start"]).reset_index(drop=True)
+        aki = (
+            aki.dropna(subset=["AKI_Start"])
+            .sort_values(["PMID", "AKI_Start"])
+            .reset_index(drop=True)
+        )
 
         # int64-Repräsentationen (ns seit Epoch)
         NA_I64 = np.iinfo(np.int64).min
-        ops_sorted = ops.sort_values(["PMID", "Surgery_End", "_orig_i"], kind="mergesort").reset_index(drop=True)
-        op_end_i64 = ops_sorted["Surgery_End"].values.astype("datetime64[ns]").astype("int64")
+        ops_sorted = ops.sort_values(
+            ["PMID", "Surgery_End", "_orig_i"], kind="mergesort"
+        ).reset_index(drop=True)
+        op_end_i64 = (
+            ops_sorted["Surgery_End"].values.astype("datetime64[ns]").astype("int64")
+        )
 
         aki_groups_i64: dict[str, np.ndarray] = {}
         for pmid, g in aki.groupby("PMID", sort=False):
-            aki_groups_i64[pmid] = g["AKI_Start"].values.astype("datetime64[ns]").astype("int64")
+            aki_groups_i64[pmid] = (
+                g["AKI_Start"].values.astype("datetime64[ns]").astype("int64")
+            )
 
         matched_i64 = np.full(len(ops_sorted), NA_I64, dtype="int64")
         start_idx = 0
         for pmid, g in ops_sorted.groupby("PMID", sort=False):
-            sl = slice(start_idx, start_idx + len(g)); start_idx += len(g)
+            sl = slice(start_idx, start_idx + len(g))
+            start_idx += len(g)
             ts = aki_groups_i64.get(pmid)
             if ts is None or ts.size == 0:
                 continue
@@ -278,14 +328,22 @@ def link_aki_to_ops(df_ops: pd.DataFrame, df_aki: Optional[pd.DataFrame]) -> pd.
                 matched_i64[sl] = tmp
 
         # zurück nach datetime + Delta als int64‑Differenz (Tage)
-        ops_sorted["AKI_Start"] = pd.to_datetime(matched_i64, unit="ns", errors="coerce")
-        end_i64 = ops_sorted["Surgery_End"].values.astype("datetime64[ns]").astype("int64")
-        aki_i64 = ops_sorted["AKI_Start"].values.astype("datetime64[ns]").astype("int64")
+        ops_sorted["AKI_Start"] = pd.to_datetime(
+            matched_i64, unit="ns", errors="coerce"
+        )
+        end_i64 = (
+            ops_sorted["Surgery_End"].values.astype("datetime64[ns]").astype("int64")
+        )
+        aki_i64 = (
+            ops_sorted["AKI_Start"].values.astype("datetime64[ns]").astype("int64")
+        )
         delta_days = np.full(len(ops_sorted), np.nan, dtype=float)
         mask = (aki_i64 != NA_I64) & (end_i64 != NA_I64)
         delta_days[mask] = (aki_i64[mask] - end_i64[mask]) / 86400_000_000_000.0
         ops_sorted["days_to_AKI"] = delta_days
-        ops_sorted["AKI_linked_0_7"] = ((delta_days >= 0) & (delta_days <= 7)).astype("Int64")
+        ops_sorted["AKI_linked_0_7"] = ((delta_days >= 0) & (delta_days <= 7)).astype(
+            "int8"
+        )
 
         ops_final = ops_sorted.sort_values("_orig_i", kind="mergesort").drop(columns=["_orig_i"])  # type: ignore
         return ops_final
@@ -295,7 +353,6 @@ def link_aki_to_ops(df_ops: pd.DataFrame, df_aki: Optional[pd.DataFrame]) -> pd.
         ops["days_to_AKI"] = np.nan
         ops["AKI_linked_0_7"] = pd.Series(pd.NA, dtype="Int64")
         return ops
-
 
 
 def merge_patients(df_ops: pd.DataFrame, df_pat: pd.DataFrame) -> pd.DataFrame:
@@ -318,7 +375,9 @@ def merge_patients(df_ops: pd.DataFrame, df_pat: pd.DataFrame) -> pd.DataFrame:
     return merged
 
 
-def merge_features(df_ops: pd.DataFrame, feature_paths: Iterable[str | Path]) -> pd.DataFrame:
+def merge_features(
+    df_ops: pd.DataFrame, feature_paths: Iterable[str | Path]
+) -> pd.DataFrame:
     """Beliebige Feature‑CSV(s) per Schlüssel joinen. Erwartet mindestens PMID + Surgery_Start/Procedure_ID.
     Die Funktion versucht pragmatisch mehrere Schlüsselvarianten.
     """
@@ -334,7 +393,9 @@ def merge_features(df_ops: pd.DataFrame, feature_paths: Iterable[str | Path]) ->
             ["PMID", "op_index"],
         ]
         for keys in candidates:
-            if all(k in fdf.columns for k in keys) and all(k in df.columns for k in keys):
+            if all(k in fdf.columns for k in keys) and all(
+                k in df.columns for k in keys
+            ):
                 join_keys = keys
                 break
         if join_keys is None:
@@ -346,7 +407,8 @@ def merge_features(df_ops: pd.DataFrame, feature_paths: Iterable[str | Path]) ->
 
 def sanitize_for_obs(df: pd.DataFrame) -> pd.DataFrame:
     """Konvertiert problematische Typen für .obs:
-    datetime→ISO-String ('' bei fehlend), category→str, object→str (oder ISO), bool→Int64."""
+    datetime→ISO-String ('' bei fehlend), category→str, object→str (oder ISO), bool→Int64.
+    """
     out = df.copy()
     for c in out.columns:
         s = out[c]
@@ -368,7 +430,7 @@ def sanitize_for_obs(df: pd.DataFrame) -> pd.DataFrame:
             continue
         # 4) Bool -> Int64
         if pd.api.types.is_bool_dtype(s):
-            out[c] = s.astype("Int64")
+            out[c] = s.astype("int8")
             continue
     return out
 
@@ -442,7 +504,9 @@ def update_anndata(existing_h5ad: str | Path, new_adata: AnnData) -> AnnData:
         combined = combined[~combined.obs.index.duplicated(keep="first")].copy()
     # X angleichen (einfacher Fall: kein Mischen verschiedener X‑Schemata)
     if (old.X is None) != (new_adata.X is None):
-        print("[WARN] Unterschiedliches .X‑Schema (alt vs. neu). .X wird verworfen (None).")
+        print(
+            "[WARN] Unterschiedliches .X‑Schema (alt vs. neu). .X wird verworfen (None)."
+        )
         combined.X = None
         combined.var = None
     return combined
@@ -452,15 +516,43 @@ def update_anndata(existing_h5ad: str | Path, new_adata: AnnData) -> AnnData:
 # CLI
 # ------------------------------
 
+
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Build/Update AnnData from CSV tables (clinician‑friendly)")
-    p.add_argument("--ops", required=True, help="Pfad zur OP‑Tabelle (HLM Operationen.csv)")
-    p.add_argument("--patients", required=True, help="Pfad zur Patiententabelle (Patient Master Data.csv)")
-    p.add_argument("--aki", required=False, default=None, help="Pfad zur AKI‑Tabelle (AKI Label.csv)")
-    p.add_argument("--features", nargs="*", default=None, help="Optionale Feature‑CSV(s), die per Schlüssel gemerged werden")
-    p.add_argument("--x-features", nargs="*", default=None, help="Spaltennamen, die als .X übernommen werden (numerisch)")
+    p = argparse.ArgumentParser(
+        description="Build/Update AnnData from CSV tables (clinician‑friendly)"
+    )
+    p.add_argument(
+        "--ops", required=True, help="Pfad zur OP‑Tabelle (HLM Operationen.csv)"
+    )
+    p.add_argument(
+        "--patients",
+        required=True,
+        help="Pfad zur Patiententabelle (Patient Master Data.csv)",
+    )
+    p.add_argument(
+        "--aki",
+        required=False,
+        default=None,
+        help="Pfad zur AKI‑Tabelle (AKI Label.csv)",
+    )
+    p.add_argument(
+        "--features",
+        nargs="*",
+        default=None,
+        help="Optionale Feature‑CSV(s), die per Schlüssel gemerged werden",
+    )
+    p.add_argument(
+        "--x-features",
+        nargs="*",
+        default=None,
+        help="Spaltennamen, die als .X übernommen werden (numerisch)",
+    )
     p.add_argument("--out", required=True, help="Ziel‑.h5ad Pfad")
-    p.add_argument("--update", default=None, help="Bestehendes .h5ad, das inkrementell erweitert werden soll")
+    p.add_argument(
+        "--update",
+        default=None,
+        help="Bestehendes .h5ad, das inkrementell erweitert werden soll",
+    )
     return p.parse_args(argv)
 
 
@@ -505,11 +597,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f".X  : {'None' if a.X is None else a.X.shape}")
     print("obs columns (Auszug):", list(a.obs.columns)[:12], "...")
     if a.uns.get("build_info"):
-        print("build_info:", a.uns["build_info"]) 
+        print("build_info:", a.uns["build_info"])
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-

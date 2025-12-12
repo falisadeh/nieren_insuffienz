@@ -1,0 +1,201 @@
+# ==========================================================
+# AKI-ANALYSE: DATEN-PREPROCESSING & EHRPY-ÜBERGABE
+#
+# Ziel: Führt 6 separate klinische Tabellen zu einem AnnData-Objekt zusammen.
+# Umgebung: Lokale Python-Umgebung (VS Code)
+# ==========================================================
+
+import pandas as pd
+import numpy as np
+import ehrapy as ep
+import os
+import matplotlib.pyplot as plt
+
+# --- 1. KONFIGURATION: HIER MÜSSEN NUR DIE DATEINAMEN EINGETRAGEN WERDEN ---
+# Stellen Sie sicher, dass alle Dateien im gleichen Ordner wie dieses Skript liegen!
+PATH_AKI = "AKI Label.csv"
+PATH_OPS = "HLM Operationen.csv"
+PATH_MASTER = "Patient Master Data.csv"
+PATH_VIS = "VIS.csv"
+PATH_KREA = "Laboratory_Kreatinin+CystatinC.csv"
+PATH_SUPPLEMENT = "Procedure Supplement.csv"
+
+
+# ---------------------------------------------------------------------------------
+# FUNKTION: Daten laden und in das AnnData-Objekt überführen
+# ---------------------------------------------------------------------------------
+
+
+def run_preprocessing_pipeline():
+    """
+    Führt den gesamten Merge- und Feature-Engineering-Prozess durch
+    und gibt das finale ehrapy-Objekt (adata) zurück.
+    """
+    print("--- Start der Datenvorverarbeitung (Pandas Merge) ---")
+
+    # 1. Daten einlesen (Alle Daten werden lokal gelesen)
+    try:
+        df_aki = pd.read_csv(PATH_AKI)
+        df_ops = pd.read_csv(PATH_OPS)
+        df_master = pd.read_csv(PATH_MASTER)
+        df_vis = pd.read_csv(PATH_VIS)
+        df_krea = pd.read_csv(PATH_KREA)
+        # df_supplement wird aktuell nicht direkt für Prädiktoren benötigt
+        print(f"✅ {len(df_ops)} Operationen in der Basis-Tabelle gefunden.")
+    except FileNotFoundError as e:
+        print(f"❌ FEHLER: Eine Datei wurde nicht gefunden. Bitte Pfad prüfen: {e}")
+        return None
+
+    # 2. Zeitzonen-Management (Konvertierung der Zeitstempel)
+    # Dies ist notwendig, um Alter und Zeitfenster korrekt zu berechnen
+    TIME_COLS = [
+        "Start",
+        "End",
+        "DateOfDie",
+        "DateOfBirth",
+        "Start of surgery",
+        "End of surgery",
+        "CollectionTimestamp",
+        "Timestamp",
+    ]
+    dfs_to_process = [df_aki, df_master, df_ops, df_vis, df_krea]
+    for df in dfs_to_process:
+        for col in [c for c in df.columns if c in TIME_COLS]:
+            df[col] = pd.to_datetime(df[col], errors="coerce")
+    print("✅ Zeitstempel konvertiert.")
+
+    # 3. ZIELVARIABLE (AKI) vorbereiten und mit OPs verknüpfen
+
+    # AKI-Status (Decision >= 1) auf Patientenebene zusammenfassen: 1, wenn JEMALS AKI
+    df_aki_any = (
+        df_aki.groupby("PMID")["Decision"]
+        .apply(lambda x: 1 if not x.empty else 0)
+        .reset_index(name="AKI_any_0_7_raw")
+    )
+
+    # Operations-Tabelle (df_ops) als Basis verwenden (SMID ist die Beobachtungseinheit)
+    df_master_table = pd.merge(df_ops, df_aki_any, on="PMID", how="left")
+
+    # NaN (kein Eintrag in AKI-Tabelle) bedeutet: Kein AKI. Fülle mit 0.
+    df_master_table["AKI_any_0_7"] = (
+        df_master_table["AKI_any_0_7_raw"].fillna(0).astype(int)
+    )
+
+    # Bereinigung
+    df_master_table = df_master_table.drop(columns=["AKI_any_0_7_raw"], errors="ignore")
+
+    # 4. Demografische Daten und Alter hinzufügen
+    df_demog = df_master[["PMID", "Sex", "DateOfBirth"]]
+    df_master_table = pd.merge(df_master_table, df_demog, on="PMID", how="left")
+
+    # Berechne das Alter in Jahren zum Zeitpunkt des OP-Starts
+    df_master_table["age_years_at_first_op"] = (
+        df_master_table["Start of surgery"] - df_master_table["DateOfBirth"]
+    ).dt.days / 365.25
+    # Normiere das Geschlecht für die Analyse (z.B. für One-Hot-Encoding)
+    df_master_table["Sex_norm"] = df_master_table["Sex"].replace(
+        {"f": "Female", "m": "Male"}
+    )
+    print("✅ Alter und Geschlecht hinzugefügt.")
+
+    # 5. FEATURE ENGINEERING (Platzhalter für die komplexe Zeitreihenanalyse)
+
+    print("\n--- ⚠️ PLATZHALTER: Feature Engineering für Laborwerte und VIS ---")
+    print(
+        "Dieser Schritt erfordert komplexe Logik, um Labordaten zeitlich relativ zum OP-Start zu aggregieren."
+    )
+
+    # --- HIER MUSS DER SPEZIFISCHE CODE EINGEFÜGT WERDEN ---
+
+    # 5.1 Berechne OP-Dauer und n_ops (einfache Features)
+    df_master_table["duration_hours"] = (
+        df_master_table["End of surgery"] - df_master_table["Start of surgery"]
+    ).dt.total_seconds() / 3600
+    df_master_table["n_ops"] = df_master_table.groupby("PMID")[
+        "Procedure_ID"
+    ].transform("count")
+
+    # 5.2 SIMULATION der restlichen Features (MUSS ERSETZT WERDEN!)
+    # Im echten Code müssten hier df_krea und df_vis verwendet werden.
+    np.random.seed(42)
+    df_master_table["crea_baseline"] = np.random.rand(len(df_master_table)) * 100 + 50
+    df_master_table["crea_peak_0_48"] = df_master_table["crea_baseline"] * (
+        1 + np.random.rand(len(df_master_table)) * 0.5
+    )
+    df_master_table["crea_delta_0_48"] = (
+        df_master_table["crea_peak_0_48"] - df_master_table["crea_baseline"]
+    )
+
+    print("-----------------------------------------------------------------")
+
+    # 6. Finale Übergabe an ehrapy
+
+    # Wähle die finalen Spalten für die Analyse aus
+    cols_final = [
+        "SMID",
+        "AKI_any_0_7",
+        "Sex_norm",
+        "age_years_at_first_op",
+        "duration_hours",
+        "n_ops",
+        "crea_baseline",
+        "crea_peak_0_48",
+        "crea_delta_0_48",
+    ]
+
+    # Filtern nach Spalten, die tatsächlich erstellt wurden und kopieren
+    df_master_final = df_master_table[
+        [c for c in cols_final if c in df_master_table.columns]
+    ].copy()
+    df_master_final = df_master_final.dropna(
+        subset=["SMID"]
+    )  # SMID als Index ist zwingend
+
+    if df_master_final.empty:
+        print("❌ Das finale DataFrame ist leer.")
+        return None
+
+    # Übergabe des Pandas DataFrames an ehrapy (SMID als Beobachtungseinheit)
+    adata = ep.io.read_dataframe(df_master_final, index_column="SMID")
+    print(
+        f"\n✅ Datenübergabe erfolgreich. AnnData-Objekt: {adata.shape[0]} OPs x {adata.shape[1]} Features."
+    )
+
+    return adata
+
+
+# ---------------------------------------------------------------------------------
+# --- HAUPTPROGRAMM (Ausführung und erste Analyse) ---
+# ---------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+
+    # Führe die gesamte Pipeline aus
+    adata = run_preprocessing_pipeline()
+
+    if adata is not None:
+        print("\n--- Start der Deskriptiven ehrapy-Analyse ---")
+
+        # 1. Feature-Typen bestimmen (Für ehrapy sehr wichtig)
+        ep.ad.infer_feature_types(adata)
+        print("Inferenz der Feature-Typen abgeschlossen.")
+
+        # 2. AKI-Label als kategorial korrigieren (falls nötig)
+        if "AKI_any_0_7" in adata.var_names:
+            ep.ad.replace_feature_types(
+                adata, feature="AKI_any_0_7", corrected_type="categorical"
+            )
+
+        # 3. Violinplot (Altersverteilung nach AKI-Status)
+        print("Erstelle Violinplot (Alter vs. AKI)...")
+        ep.pl.violin(adata, keys=["age_years_at_first_op"], groupby="AKI_any_0_7")
+        plt.title("Altersverteilung nach AKI (0=Nein, 1=Ja)")
+        plt.show()  # Zeigt den Plot im VS Code Notebook/Plot-Viewer
+        print("✅ Plot generiert.")
+
+        # 4. Korrelations-Heatmap
+        print("Erstelle Korrelations-Heatmap...")
+        ep.pl.correlation_matrix(adata)
+        plt.title("Korrelation ausgewählter Parameter")
+        plt.show()
+        print("✅ Heatmap generiert.")

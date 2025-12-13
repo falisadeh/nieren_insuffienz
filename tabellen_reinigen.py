@@ -1,9 +1,10 @@
 import re
 import pandas as pd
 from pathlib import Path
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 
 BASE = cs_transfer_path()
+DATA_DIR = ORIGINAL_DATA_DIR
 
 # ---------- Hilfsfunktionen ----------
 def strip_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -30,7 +31,7 @@ def normalize_sex(s):
     return pd.NA
 
 # ---------- 1) HLM Operationen ----------
-df_op = pd.read_csv(BASE / "HLM Operationen.csv", sep=";")
+df_op = pd.read_csv(DATA_DIR / "HLM Operationen.csv", sep=";")
 strip_columns(df_op)
 to_str_strip(df_op, ["PMID", "SMID", "Procedure_ID"])
 parse_dates(df_op, ["Start of surgery", "End of surgery"])
@@ -39,7 +40,7 @@ parse_dates(df_op, ["Start of surgery", "End of surgery"])
 df_op = df_op[~df_op["Start of surgery"].isna()].copy()
 
 # ---------- 2) Patient Master Data ----------
-df_pat = pd.read_csv(BASE / "Patient Master Data.csv", sep=";")
+df_pat = pd.read_csv(DATA_DIR / "Patient Master Data.csv", sep=";")
 strip_columns(df_pat)
 to_str_strip(df_pat, ["PMID", "Sex"])
 parse_dates(df_pat, ["DateOfBirth", "DateOfDie"])
@@ -48,7 +49,7 @@ df_pat["Sex"] = df_pat["Sex"].apply(normalize_sex)
 df_pat = df_pat.drop_duplicates(subset="PMID", keep="first").copy()
 
 # ---------- 3) AKI Label ----------
-df_aki = pd.read_csv(BASE / "AKI Label.csv", sep=";")
+df_aki = pd.read_csv(DATA_DIR / "AKI Label.csv", sep=";")
 strip_columns(df_aki)
 # Tippfehler korrigieren (Duartion -> Duration), nur wenn vorhanden
 if "Duartion" in df_aki.columns and "Duration" not in df_aki.columns:
@@ -75,7 +76,7 @@ df_aki_first = (
 )
 
 # ---------- 4) Procedure Supplement (für spätere Zwecke; AKI steht hier wohl nicht drin) ----------
-df_supp = pd.read_csv(BASE / "Procedure Supplement.csv", sep=";")
+df_supp = pd.read_csv(DATA_DIR / "Procedure Supplement.csv", sep=";")
 strip_columns(df_supp)
 to_str_strip(df_supp, ["PMID", "SMID", "Procedure_ID", "TimestampName"])
 parse_dates(df_supp, ["Timestamp"])
@@ -416,7 +417,7 @@ print(prio_counts.to_string())
 import pandas as pd
 
 # 1) Patientendaten laden (falls noch nicht vorhanden)
-df_pat = pd.read_csv(BASE / "Patient Master Data.csv", sep=";")
+df_pat = pd.read_csv(DATA_DIR / "Patient Master Data.csv", sep=";")
 df_pat.columns = df_pat.columns.str.strip()
 
 # 2) Geschlecht normalisieren
@@ -463,10 +464,10 @@ OUT.mkdir(exist_ok=True)
 # ---------------------------
 # 1) Rohdaten einlesen
 # ---------------------------
-df_op   = pd.read_csv(BASE / "HLM Operationen.csv",      sep=";", parse_dates=["Start of surgery"])
-df_aki  = pd.read_csv(BASE / "AKI Label.csv",            sep=";", parse_dates=["Start"])
-df_pat  = pd.read_csv(BASE / "Patient Master Data.csv",  sep=";")
-df_supp = pd.read_csv(BASE / "Procedure Supplement.csv", sep=";", parse_dates=["Timestamp"])
+df_op   = pd.read_csv(DATA_DIR / "HLM Operationen.csv",      sep=";", parse_dates=["Start of surgery"])
+df_aki  = pd.read_csv(DATA_DIR / "AKI Label.csv",            sep=";", parse_dates=["Start"])
+df_pat  = pd.read_csv(DATA_DIR / "Patient Master Data.csv",  sep=";")
+df_supp = pd.read_csv(DATA_DIR / "Procedure Supplement.csv", sep=";", parse_dates=["Timestamp"])
 
 for df in (df_op, df_aki, df_pat, df_supp):
     df.columns = df.columns.str.strip()

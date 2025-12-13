@@ -5,11 +5,12 @@ import pandas as pd
 import numpy as np
 from anndata import AnnData
 from pathlib import Path
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 
 BASE = cs_transfer_path()
+ORIG_DATA_DIR = ORIGINAL_DATA_DIR
 OPS_H5AD_IN  = BASE / "ops_with_crea_cysc_vis_features.h5ad"
-AKI_SRC_CSV  = BASE / "AKI Label.csv"  # semikolon-getrennt
+AKI_SRC_CSV  = ORIG_DATA_DIR / "AKI Label.csv"  # semikolon-getrennt
 OPS_CSV_OUT  = BASE / "ops_with_aki.csv"
 OPS_H5AD_OUT = BASE / "ops_with_aki.h5ad"
 

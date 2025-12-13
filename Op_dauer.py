@@ -7,15 +7,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 
 
 BASE = cs_transfer_path()
+DATA_DIR = ORIGINAL_DATA_DIR
 OUT = BASE
 (OUT / "Diagramme").mkdir(exist_ok=True)
 
 # 1) Supplement laden & säubern
-df = pd.read_csv(BASE / "Procedure Supplement.csv", sep=";", parse_dates=["Timestamp"])
+df = pd.read_csv(DATA_DIR / "Procedure Supplement.csv", sep=";", parse_dates=["Timestamp"])
 df.columns = df.columns.str.strip()
 for c in ["PMID", "SMID", "Procedure_ID", "TimestampName"]:
     df[c] = df[c].astype(str).str.strip()
@@ -141,18 +142,19 @@ import pandas as pd
 from pathlib import Path
 
 BASE = cs_transfer_path()
+DATA_DIR = ORIGINAL_DATA_DIR
 OUT = BASE
 
 # ---------- 1) Load & clean ----------
 op = pd.read_csv(
-    f"{BASE}/HLM Operationen.csv",
+    DATA_DIR / "HLM Operationen.csv",
     sep=";",
     parse_dates=["Start of surgery", "End of surgery"],
 )
-aki = pd.read_csv(f"{BASE}/AKI Label.csv", sep=";", parse_dates=["Start"])
-pat = pd.read_csv(f"{BASE}/Patient Master Data.csv", sep=";")
+aki = pd.read_csv(DATA_DIR / "AKI Label.csv", sep=";", parse_dates=["Start"])
+pat = pd.read_csv(DATA_DIR / "Patient Master Data.csv", sep=";")
 supp = pd.read_csv(
-    f"{BASE}/Procedure Supplement.csv", sep=";", parse_dates=["Timestamp"]
+    DATA_DIR / "Procedure Supplement.csv", sep=";", parse_dates=["Timestamp"]
 )
 
 for df in (op, aki, pat, supp):

@@ -1,9 +1,7 @@
 import ehrapy as ep
 import pandas as pd
 
-from paths import cs_transfer_path
-
-ORIGINAL_DATA_DIR = cs_transfer_path("Orginal Daten")
+from paths import ORIGINAL_DATA_DIR
 
 # Laden der Daten aus den CSV-Dateien
 lab_df = pd.read_csv(

@@ -6,10 +6,11 @@ import numpy as np
 from pathlib import Path
 from anndata import AnnData
 import ehrapy as ep
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 # Pfade
-LAB_SRC = "/Users/fa/Downloads/cs-transfer/Laborwerte_Kreatinin+CystatinC.csv"
-VIS_SRC = "/Users/fa/Downloads/cs-transfer/VIS.csv"
+DATA_DIR = ORIGINAL_DATA_DIR
+LAB_SRC = DATA_DIR / "Laboratory_Kreatinin+CystatinC.csv"
+VIS_SRC = DATA_DIR / "VIS.csv"
 
 OUT_DIR = cs_transfer_path()
 OUT_DIR.mkdir(parents=True, exist_ok=True)

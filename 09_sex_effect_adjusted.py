@@ -7,7 +7,7 @@ from paths import cs_transfer_path
 
 # --------- Pfade anpassen ---------
 H5AD = cs_transfer_path("aki_ops_master_S1_survival.h5ad")
-PATIENT_MASTER = cs_transfer_path("Patient Master Data.csv")
+PATIENT_MASTER = cs_transfer_path("Original Daten", "Patient Master Data.csv")
 OUT = cs_transfer_path("Diagramme")
 os.makedirs(OUT, exist_ok=True)
 

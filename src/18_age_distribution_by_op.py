@@ -44,6 +44,7 @@ def resolve_csv(preferred_name: str) -> Path:
         DATA_DIR / preferred_name,
         DATA_DIR / "Original Daten" / preferred_name,
         DATA_DIR / "Original_Daten" / preferred_name,
+        BASE / "Original Daten" / preferred_name,
         BASE / preferred_name,
     ]
     for c in candidates:

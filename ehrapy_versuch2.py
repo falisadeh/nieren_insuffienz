@@ -3,13 +3,14 @@
 import pandas as pd
 import ehrapy as ep
 import matplotlib.pyplot as plt
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 
 # 1. CSV-Dateien einlesen
-df_aki = pd.read_csv(cs_transfer_path("AKI Label.csv"), sep=";")
-df_hlm = pd.read_csv(cs_transfer_path("HLM Operationen.csv"), sep=";")
-df_patient = pd.read_csv(cs_transfer_path("Patient Master Data.csv"), sep=";")
-df_proc = pd.read_csv(cs_transfer_path("Procedure Supplement.csv"), sep=";")
+DATA_DIR = ORIGINAL_DATA_DIR
+df_aki = pd.read_csv(DATA_DIR / "AKI Label.csv", sep=";")
+df_hlm = pd.read_csv(DATA_DIR / "HLM Operationen.csv", sep=";")
+df_patient = pd.read_csv(DATA_DIR / "Patient Master Data.csv", sep=";")
+df_proc = pd.read_csv(DATA_DIR / "Procedure Supplement.csv", sep=";")
 
 # 2. Spalten bereinigen & Datumsformate umwandeln
 df_patient.columns = df_patient.columns.str.strip()

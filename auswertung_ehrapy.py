@@ -2,18 +2,19 @@
 import pandas as pd
 import numpy as np
 
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 # Optional: für AnnData/ehrapy
 # from anndata import AnnData
 # import ehrapy as ep
 
 BASE = cs_transfer_path()
+DATA_DIR = ORIGINAL_DATA_DIR
 OUT = BASE
 OUT.mkdir(exist_ok=True)
 
 # --- 1) Supplement laden & säubern ---
 df_supp = pd.read_csv(
-    cs_transfer_path("Procedure Supplement.csv"),
+    DATA_DIR / "Procedure Supplement.csv",
     sep=";",
     parse_dates=["Timestamp"],
 )
@@ -52,7 +53,7 @@ op_times_valid = op_times.loc[valid].copy()
 # --- 4) Optionaler Cross-Check gegen HLM Operationen (falls vorhanden) ---
 try:
     df_op = pd.read_csv(
-        cs_transfer_path("HLM Operationen.csv"),
+        DATA_DIR / "HLM Operationen.csv",
         sep=";",
         parse_dates=["Start of surgery", "End of surgery"],
     )
@@ -90,4 +91,3 @@ print(op_times_valid["duration_hours"].describe())
 # adata = AnnData(op_times_valid.set_index("op_id"))
 # adata.write_h5ad(OUT / "op_durations_from_supp.h5ad")
 # print("AnnData geschrieben: op_durations_from_supp.h5ad")
-

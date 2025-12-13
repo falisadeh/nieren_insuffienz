@@ -5,11 +5,12 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from anndata import AnnData
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 
 # ==================== Pfade ====================
 BASE = cs_transfer_path()
-p_ops = BASE / "HLM Operationen.csv"                 # OP-Tabelle (wie bisher)
+DATA_DIR = ORIGINAL_DATA_DIR
+p_ops = DATA_DIR / "HLM Operationen.csv"             # OP-Tabelle (wie bisher)
 p_lab_harm = BASE / "lab_crea_cysc_harmonized.csv"   # aus Schritt 11
 p_vis_clean = BASE / "vis_raw_clean.csv"             # aus Schritt 11
 

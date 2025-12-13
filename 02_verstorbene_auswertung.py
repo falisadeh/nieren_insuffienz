@@ -1,11 +1,12 @@
 #%%
 import pandas as pd
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 
 # CSV einlesen (mit Semikolon als Trennzeichen)
 BASE = cs_transfer_path()
+DATA_DIR = ORIGINAL_DATA_DIR
 
-df_ops = pd.read_csv(BASE / "HLM Operationen.csv", sep=";")
+df_ops = pd.read_csv(DATA_DIR / "HLM Operationen.csv", sep=";")
 
 # Spaltennamen bereinigen
 df_ops.columns = df_ops.columns.str.strip()
@@ -145,7 +146,7 @@ print(" Diagramm gespeichert unter:", plot_path)
 
 # Lade die Patient Master Data.csv (mit DateOfDie)
 df_pat = pd.read_csv(
-    BASE / "Patient Master Data.csv",
+    DATA_DIR / "Patient Master Data.csv",
     sep=";"  # Achtung: auch hier wahrscheinlich Semikolon!
 )
 df_pat.columns = df_pat.columns.str.strip()

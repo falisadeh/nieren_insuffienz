@@ -6,7 +6,7 @@ from patsy import dmatrix
 from paths import cs_transfer_path
 
 H5AD = cs_transfer_path("aki_ops_master_S1_survival.h5ad")
-PATIENT_MASTER = cs_transfer_path("Patient Master Data.csv")
+PATIENT_MASTER = cs_transfer_path("Original Daten", "Patient Master Data.csv")
 OUT = cs_transfer_path("Diagramme")
 os.makedirs(OUT, exist_ok=True)
 
@@ -190,5 +190,4 @@ plt.tight_layout()
 out3 = os.path.join(OUT, "scatter_plus_splines_by_sex.png")
 plt.savefig(out3, bbox_inches="tight"); plt.close()
 print("Gespeichert:", out3)
-
 

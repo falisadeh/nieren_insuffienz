@@ -3,19 +3,20 @@ import pandas as pd
 import ehrapy as ep
 import os
 
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 print("CWD:", os.getcwd())
 print("Dateien im Ordner:", os.listdir())
 
 
 # 1. CSV-Dateien einlesen
-df_aki = pd.read_csv(cs_transfer_path("AKI Label.csv"), sep=";")
+DATA_DIR = ORIGINAL_DATA_DIR
+df_aki = pd.read_csv(DATA_DIR / "AKI Label.csv", sep=";")
 print("df_aki geladen")
-df_op = pd.read_csv(cs_transfer_path("HLM Operationen.csv"), sep=";")
+df_op = pd.read_csv(DATA_DIR / "HLM Operationen.csv", sep=";")
 print("df_op geladen")
-df_patient = pd.read_csv(cs_transfer_path("Patient Master Data.csv"), sep=";")
+df_patient = pd.read_csv(DATA_DIR / "Patient Master Data.csv", sep=";")
 print("df_patient geladen")
-df_supp = pd.read_csv(cs_transfer_path("Procedure Supplement.csv"), sep=";")
+df_supp = pd.read_csv(DATA_DIR / "Procedure Supplement.csv", sep=";")
 print("df_supp geladen")
 
 # erst wenn alles klappt:
@@ -201,8 +202,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # 1. Einlesen & Spalten bereinigen
-df_op  = pd.read_csv("HLM Operationen.csv", sep=";", parse_dates=['Start of surgery'])
-df_aki = pd.read_csv("AKI Label.csv",     sep=";", parse_dates=['Start'])
+df_op  = pd.read_csv(DATA_DIR / "HLM Operationen.csv", sep=";", parse_dates=['Start of surgery'])
+df_aki = pd.read_csv(DATA_DIR / "AKI Label.csv",     sep=";", parse_dates=['Start'])
 for df in (df_op, df_aki):
     df.columns = df.columns.str.strip()
 
@@ -273,11 +274,11 @@ import pandas as pd
 
 # 1. Einlesen mit deinem lokalen Pfad
 df_op  = pd.read_csv(
-    cs_transfer_path("HLM Operationen.csv"),
+    DATA_DIR / "HLM Operationen.csv",
     sep=";", parse_dates=['Start of surgery']
 )
 df_aki = pd.read_csv(
-    cs_transfer_path("AKI Label.csv"),
+    DATA_DIR / "AKI Label.csv",
     sep=";", parse_dates=['Start']
 )
 for df in (df_op, df_aki):

@@ -12,12 +12,13 @@ import pandas as pd
 import numpy as np
 from anndata import AnnData
 from pathlib import Path
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 
 # ------------------ Pfade ------------------
 BASE = cs_transfer_path()
+ORIG_DIR = ORIGINAL_DATA_DIR
 OPS_CSV   = BASE / "ops_with_aki.csv"
-PAT_CSV   = BASE / "Patient Master Data.csv"     # optional
+PAT_CSV   = ORIG_DIR / "Patient Master Data.csv"     # optional
 OUTD      = BASE / "Diagramme"
 OUTD.mkdir(parents=True, exist_ok=True)
 DAG_PNG   = OUTD / "DAG_duration_to_AKI.png"

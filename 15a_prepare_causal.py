@@ -46,7 +46,7 @@ def load_ops_hlm(path: str) -> pd.DataFrame:
 
 
 # ======= Nutzung =======
-path = "HLM Operationen.csv"  # ggf. absoluter Pfad
+path = "Original Daten/HLM Operationen.csv"  # ggf. absoluter Pfad
 ops = load_ops_hlm(path)
 print("Spalten OK:", ops.columns.tolist())
 print("n_OP-Zeilen:", len(ops))
@@ -142,12 +142,12 @@ agg = (ops_sorted.groupby("PMID").agg(
 print("Index-OP Datensätze:", len(idxop), "| Aggregat-Zeilen:", len(agg))
 
 # ---------- Patienten & Alter mergen ----------
-pat = load_patients("Patient Master Data.csv")  # Pfad anpassen falls nötig
+pat = load_patients("Original Daten/Patient Master Data.csv")  # Pfad anpassen falls nötig
 base = pat.merge(idxop, on="PMID", how="inner")
 base["age_years_at_first_op"] = (base["first_op_date"] - base["DateOfBirth"]).dt.days / 365.2425
 
 # ---------- AKI zeitbasiert nach erster OP verknüpfen ----------
-aki = load_aki("AKI Label.csv")  # Pfad anpassen
+aki = load_aki("Original Daten/AKI Label.csv")  # Pfad anpassen
 match = []
 # schneller Zugriff per GroupBy
 aki_g = {pid: g for pid, g in aki.groupby("PMID")}
@@ -276,6 +276,5 @@ print("AKI 0–7 (OP-Ebene):", df["AKI_linked_0_7"].value_counts(dropna=False))
 # Fehlende Werte grob
 na_counts = df.isna().sum().sort_values(ascending=False)
 print("Top NA-Spalten:\n", na_counts.head(10))
-
 
 

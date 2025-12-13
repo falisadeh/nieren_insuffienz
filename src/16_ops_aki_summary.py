@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from paths import cs_transfer_path
+from paths import cs_transfer_path, ORIGINAL_DATA_DIR
 
 # Schalter & Helper ganz oben (nach Imports)
 CHECKS = True
@@ -17,9 +17,10 @@ def check(name: str, cond: bool, msg_if_fail: str):
 
 # ================== Pfade ==================
 BASE = cs_transfer_path()
-OPS_CSV = BASE / "HLM Operationen.csv"
-PAT_CSV = BASE / "Patient Master Data.csv"
-AKI_CSV = BASE / "AKI Label.csv"
+ORIG_DIR = ORIGINAL_DATA_DIR
+OPS_CSV = ORIG_DIR / "HLM Operationen.csv"
+PAT_CSV = ORIG_DIR / "Patient Master Data.csv"
+AKI_CSV = ORIG_DIR / "AKI Label.csv"
 OUT_DIR = BASE / "Daten"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 DIAG_DIR = BASE / "Diagramme"

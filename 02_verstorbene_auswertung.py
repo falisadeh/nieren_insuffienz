@@ -1,11 +1,11 @@
 #%%
 import pandas as pd
+from paths import cs_transfer_path
 
 # CSV einlesen (mit Semikolon als Trennzeichen)
-df_ops = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/HLM Operationen.csv",
-    sep=";"
-)
+BASE = cs_transfer_path()
+
+df_ops = pd.read_csv(BASE / "HLM Operationen.csv", sep=";")
 
 # Spaltennamen bereinigen
 df_ops.columns = df_ops.columns.str.strip()
@@ -17,7 +17,7 @@ op_anzahl = df_ops.groupby("PMID").agg(
 ).reset_index()
 
 # CSV exportieren (ohne Index-Spalte)
-export_path = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/op_anzahl.csv"
+export_path = BASE / "op_anzahl.csv"
 op_anzahl.to_csv(export_path, index=False)
 
 print("Export erfolgreich gespeichert unter:")
@@ -36,7 +36,7 @@ plt.grid(axis='y', linestyle='--', alpha=0.7)
 plt.tight_layout()
 
 # Bild speichern
-hist_path = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/hist_op_anzahl.png"
+hist_path = BASE / "hist_op_anzahl.png"
 plt.savefig(hist_path)
 plt.close()
 
@@ -54,7 +54,7 @@ print(hist_path)
 #plt.tight_layout()
 
 # Speichern
-#pie_path = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/pie_op_anzahl.png"
+#pie_path = BASE / "pie_op_anzahl.png"
 #plt.savefig(pie_path)
 #plt.close()
 
@@ -95,7 +95,7 @@ plt.title("OP-Anzahl pro Patient (zusammengefasst)")
 plt.tight_layout()
 
 # Speichern
-pie_path = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/pie_op_anzahl_klar.png"
+pie_path = BASE / "pie_op_anzahl_klar.png"
 plt.savefig(pie_path)
 plt.close()
 
@@ -113,7 +113,7 @@ mehrfach_ops = mehrfach_ops.sort_values("OP_Anzahl", ascending=False)
 
 # Ausgabe
 print(mehrfach_ops)
-export_path = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/patienten_mehrfach_op.csv"
+export_path = BASE / "patienten_mehrfach_op.csv"
 mehrfach_ops.to_csv(export_path, index=False)
 print(" Exportiert nach:", export_path)
 # Test
@@ -137,7 +137,7 @@ plt.grid(axis="y", linestyle="--", alpha=0.7)
 plt.tight_layout()
 
 # Speichern
-plot_path = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/hist_mehrfach_ops_klar.png"
+plot_path = BASE / "hist_mehrfach_ops_klar.png"
 plt.savefig(plot_path)
 plt.close()
 
@@ -145,7 +145,7 @@ print(" Diagramm gespeichert unter:", plot_path)
 
 # Lade die Patient Master Data.csv (mit DateOfDie)
 df_pat = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Patient Master Data.csv",
+    BASE / "Patient Master Data.csv",
     sep=";"  # Achtung: auch hier wahrscheinlich Semikolon!
 )
 df_pat.columns = df_pat.columns.str.strip()
@@ -171,7 +171,7 @@ vergleich = pd.DataFrame({
 
 print(vergleich)
 vergleich.reset_index().to_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/sterblichkeit_op_gruppen.csv",
+    BASE / "sterblichkeit_op_gruppen.csv",
     index=False
 )
 print("Tabelle gespeichert.")
@@ -187,7 +187,7 @@ plt.xticks(rotation=0)
 plt.tight_layout()
 
 # Speichern
-plot_path = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/sterblichkeit_nach_op_anzahl.png"
+plot_path = BASE / "sterblichkeit_nach_op_anzahl.png"
 plt.savefig(plot_path)
 plt.close()
 
@@ -229,7 +229,7 @@ for bar in bars:
 plt.tight_layout()
 
 # Speichern
-plot_path = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/sterblichkeit_nach_op_anzahl_beschriftet.png"
+plot_path = BASE / "sterblichkeit_nach_op_anzahl_beschriftet.png"
 plt.savefig(plot_path)
 plt.close()
 

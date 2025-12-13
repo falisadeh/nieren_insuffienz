@@ -25,11 +25,12 @@ import pandas as pd
 import numpy as np
 from anndata import AnnData
 import matplotlib.pyplot as plt
+from paths import cs_transfer_path
 
 # ---------------------------
 # Pfade (robust, findet CSV auch in "Original Daten")
 # ---------------------------
-BASE = Path.home() / "Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 DATA_DIR = BASE / "Daten"
 H5AD_DIR = BASE / "h5ad"
 DIAG_DIR = BASE / "Diagramme"

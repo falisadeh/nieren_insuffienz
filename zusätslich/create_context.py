@@ -2,6 +2,8 @@ import os
 import sys
 import textwrap
 
+from paths import cs_transfer_path
+
 
 def erstelle_kontext_datei(
     *,
@@ -106,9 +108,7 @@ if __name__ == "__main__":
     # Definiere das Verzeichnis, das verarbeitet werden soll
     # (z. B. das aktuelle Verzeichnis).
     # Du kannst '.' durch einen anderen Pfad wie 'mein_projekt_ordner' ändern.
-    ziel_verzeichnis = (
-        "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-    )
+    ziel_verzeichnis = str(cs_transfer_path())
     nutze_alten_code = False
 
     # --- CSV-Kopfzeilen aus dem Unterordner "Original Daten" einsammeln ---

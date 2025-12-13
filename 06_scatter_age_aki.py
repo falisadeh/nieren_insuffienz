@@ -4,10 +4,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from anndata import read_h5ad
+from paths import cs_transfer_path
 
 # %% Pfade/Datei
-H5AD = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad"
-OUTDIR = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme"
+H5AD = cs_transfer_path("aki_ops_master_S1_survival.h5ad")
+OUTDIR = cs_transfer_path("Diagramme")
 os.makedirs(OUTDIR, exist_ok=True)
 
 # %% Daten laden (falls adata noch nicht existiert)

@@ -22,6 +22,7 @@ from typing import List, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
 from anndata import read_h5ad
+from paths import cs_transfer_path
 
 # optional: SciPy für p-Werte
 try:
@@ -29,7 +30,7 @@ try:
 except Exception:
     mannwhitneyu = None  # type: ignore
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 H5 = os.path.join(BASE, "Daten", "ops_with_patient_features.h5ad")
 OUTD = os.path.join(BASE, "Diagramme")
 os.makedirs(OUTD, exist_ok=True)

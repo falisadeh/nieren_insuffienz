@@ -1,6 +1,7 @@
 #%%
 import pandas as pd
 import numpy as np
+from paths import cs_transfer_path
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -13,7 +14,7 @@ import anndata  # aus der anndata-Bibliothek
 from sklearn.metrics import roc_auc_score
 
 # 1. CSV laden
-df = pd.read_csv("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/full_patient_data.csv")
+df = pd.read_csv(cs_transfer_path("full_patient_data.csv"))
 # Nach dem Einlesen der CSV PMDI entfernen
 df = df.drop(columns=["PMID"])
 

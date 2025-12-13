@@ -3,9 +3,10 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from anndata import AnnData
+from paths import cs_transfer_path
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-P = Path(BASE)
+BASE = cs_transfer_path()
+P = BASE
 
 # ---- Quelle wählen: ehrapy-CSV bevorzugen, sonst Master-CSV ----
 candidates = ["analytic_ops_master_ehrapy.csv", "analytic_ops_master.csv"]
@@ -92,8 +93,7 @@ print("geschrieben:", h5, "| AnnData:", adata.shape)
 from anndata import read_h5ad
 import numpy as np, pandas as pd
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-adata = read_h5ad(f"{BASE}/aki_ops_master.h5ad")
+adata = read_h5ad(cs_transfer_path("aki_ops_master.h5ad"))
 print(adata)  # sollte: 1209 × 1, var_names=['duration_hours']
 
 # Dauer holen & kurzer Check
@@ -105,4 +105,3 @@ obs = adata.obs.copy()
 obs["AKI_linked"] = pd.to_numeric(obs["AKI_linked"], errors="coerce").astype("int8")
 obs["AKI_linked_0_7"] = pd.to_numeric(obs["AKI_linked_0_7"], errors="coerce").astype("int8")
 print("linked_0_7 =", int((obs["AKI_linked_0_7"]==1).sum()))  # erwartet: 533
-

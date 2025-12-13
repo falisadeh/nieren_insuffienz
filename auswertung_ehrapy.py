@@ -1,16 +1,22 @@
 # 02_op_dauer_from_supp.py
 import pandas as pd
 import numpy as np
-from pathlib import Path
+
+from paths import cs_transfer_path
 # Optional: für AnnData/ehrapy
 # from anndata import AnnData
 # import ehrapy as ep
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-OUT  = Path(BASE); OUT.mkdir(exist_ok=True)
+BASE = cs_transfer_path()
+OUT = BASE
+OUT.mkdir(exist_ok=True)
 
 # --- 1) Supplement laden & säubern ---
-df_supp = pd.read_csv(f"{BASE}/Procedure Supplement.csv", sep=";", parse_dates=["Timestamp"])
+df_supp = pd.read_csv(
+    cs_transfer_path("Procedure Supplement.csv"),
+    sep=";",
+    parse_dates=["Timestamp"],
+)
 df_supp.columns = df_supp.columns.str.strip()
 for c in ["PMID","SMID","Procedure_ID","TimestampName"]:
     df_supp[c] = df_supp[c].astype(str).str.strip()
@@ -45,7 +51,11 @@ op_times_valid = op_times.loc[valid].copy()
 
 # --- 4) Optionaler Cross-Check gegen HLM Operationen (falls vorhanden) ---
 try:
-    df_op = pd.read_csv(f"{BASE}/HLM Operationen.csv", sep=";", parse_dates=["Start of surgery","End of surgery"])
+    df_op = pd.read_csv(
+        cs_transfer_path("HLM Operationen.csv"),
+        sep=";",
+        parse_dates=["Start of surgery", "End of surgery"],
+    )
     df_op.columns = df_op.columns.str.strip()
     for c in ["PMID","SMID","Procedure_ID"]:
         if c in df_op.columns:
@@ -80,5 +90,4 @@ print(op_times_valid["duration_hours"].describe())
 # adata = AnnData(op_times_valid.set_index("op_id"))
 # adata.write_h5ad(OUT / "op_durations_from_supp.h5ad")
 # print("AnnData geschrieben: op_durations_from_supp.h5ad")
-
 

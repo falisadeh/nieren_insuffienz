@@ -23,13 +23,14 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 from anndata import read_h5ad, AnnData
+from paths import cs_transfer_path
 
-H5 = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Daten/ops_with_patient_features.h5ad"
-adata = read_h5ad(H5)
+H5_PATH = cs_transfer_path("Daten", "ops_with_patient_features.h5ad")
+adata = read_h5ad(H5_PATH)
 for c in ["AKI_linked_0_7", "AKI_Stage", "Sex"]:
     if c in adata.obs:
         adata.obs[c] = adata.obs[c].astype("category")
-adata.write_h5ad(H5)
+adata.write_h5ad(H5_PATH)
 
 from scipy import stats
 
@@ -38,8 +39,7 @@ try:
 except Exception:
     ep = None  # type: ignore
 
-BASE_DIR = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-H5_PATH = os.path.join(BASE_DIR, "Daten", "ops_with_patient_features.h5ad")
+BASE_DIR = cs_transfer_path()
 OUT_DIR = os.path.join(BASE_DIR, "Daten")
 os.makedirs(OUT_DIR, exist_ok=True)
 

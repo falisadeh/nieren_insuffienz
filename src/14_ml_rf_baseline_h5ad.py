@@ -20,6 +20,7 @@ from typing import List, Tuple, Dict
 
 import numpy as np
 import pandas as pd
+from paths import cs_transfer_path
 
 import matplotlib as mpl
 mpl.use("Agg")  # nicht-interaktiv, sicher im Skriptlauf
@@ -46,7 +47,7 @@ from sklearn.metrics import (
 from sklearn.calibration import calibration_curve
 
 # -------------------- Pfade & Konstanten --------------------
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 H5AD_CANDIDATES = [
     os.path.join(BASE, "h5ad", "ops_with_patient_features.h5ad"),
     os.path.join(BASE, "Daten", "ops_ml_processed.h5ad"),

@@ -27,7 +27,7 @@ So viel wie möglich wird ehrapy genutzt, ohne externe Abhängigkeiten zu erzwin
   ehrapy-Schritte (z. B. Visualisierung) nachgelagert erfolgen.
 
 Pfadstruktur (aus Kontext):
-  Basis: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer
+  Basis: ${CS_TRANSFER_DIR}
   Eingabe: Original Daten/*.csv (Semikolon-getrennt)
   Ausgabe: Daten/ops_with_patient_features.h5ad
 """
@@ -41,7 +41,9 @@ from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
+import anndata as ad
 from anndata import AnnData
+from paths import cs_transfer_path
 
 # Optional: ehrapy, wenn vorhanden
 try:
@@ -49,9 +51,15 @@ try:
 except Exception:  # ehrapy ist optional – Skript läuft auch ohne
     ep = None  # type: ignore
 
-BASE_DIR = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-IN_DIR = os.path.join(BASE_DIR, "Original Daten")
-OUT_DIR = os.path.join(BASE_DIR, "Daten")
+ad.settings.allow_write_nullable_strings = (
+    True  # allow writing pandas StringArray columns
+)
+
+from pathlib import Path
+
+CS_TRANSFER_DIR = cs_transfer_path()
+IN_DIR = os.path.join(CS_TRANSFER_DIR, "Original Daten")
+OUT_DIR = os.path.join(CS_TRANSFER_DIR, "Daten")
 OUT_H5AD = os.path.join(OUT_DIR, "ops_with_patient_features.h5ad")
 
 # Eingabedateien (aus Kontext)
@@ -437,6 +445,17 @@ def main():
                 adata = ep.ad.infer_feature_types(adata)  # type: ignore
         except Exception:
             pass
+
+    # Datetime-Spalten in ISO-Strings umwandeln
+    dt_cols = [
+        c
+        for c in adata.obs.columns
+        if pd.api.types.is_datetime64_any_dtype(adata.obs[c])
+    ]
+    for c in dt_cols:
+        s = adata.obs[c]
+        adata.obs[c] = s.dt.strftime("%Y-%m-%dT%H:%M:%S").astype("string")
+        adata.obs.loc[s.isna(), c] = pd.NA
 
     # H5AD speichern
     adata.write_h5ad(OUT_H5AD)

@@ -3,6 +3,7 @@ os.environ["SCIPY_ARRAY_API"] = "1"
 
 import pandas as pd
 import numpy as np
+from paths import cs_transfer_path
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
@@ -17,7 +18,7 @@ import matplotlib.pyplot as plt
 # ==========================
 # 1. DATEN EINLESEN UND ÜBERPRÜFEN
 # ==========================
-df = pd.read_csv("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/full_patient_data.csv")
+df = pd.read_csv(cs_transfer_path("full_patient_data.csv"))
 df.columns = df.columns.str.strip()
 print("Spaltenübersicht:", df.columns.tolist())
 
@@ -191,4 +192,3 @@ plt.grid(True)
 plt.tight_layout()
 plt.savefig("precision_recall_f1_curve.png", dpi=300)  # optional für Bachelorarbeit
 plt.show()
-

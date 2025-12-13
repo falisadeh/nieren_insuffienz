@@ -4,8 +4,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from anndata import read_h5ad
 
-H5 = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad"
-SAVE_DIR = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme"
+from paths import cs_transfer_path
+
+H5 = cs_transfer_path("aki_ops_master_S1_survival.h5ad")
+SAVE_DIR = cs_transfer_path("Diagramme")
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 import statsmodels.api as sm

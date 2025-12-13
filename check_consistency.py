@@ -9,9 +9,10 @@ Zeigt nur Abweichungen >0.01 an (relevante Unterschiede).
 """
 
 import pandas as pd
-from pathlib import Path
 
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Audit")
+from paths import cs_transfer_path
+
+BASE = cs_transfer_path("Audit")
 
 MASTER = BASE / "master_table_lab_vis.csv"
 DESC   = BASE / "ehrapy_deskriptiv_median_iqr.csv"

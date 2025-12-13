@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import os
 import pandas as pd
+from paths import cs_transfer_path
 
-BASE = os.path.expanduser("~/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 
 FILES = {
     "AKI_Latenz_alle": os.path.join(BASE, "AKI_Latenz_alle.csv"),
@@ -38,6 +39,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 

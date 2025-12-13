@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from pathlib import Path
 import pandas as pd
 import numpy as np
 import ehrapy as ep
+from paths import cs_transfer_path
 
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/h5ad")
+BASE = cs_transfer_path("h5ad")
 FILES = [
     "ops_with_crea_cysc_vis_features_with_AKI.h5ad",
     "ops_with_patient_features.h5ad",

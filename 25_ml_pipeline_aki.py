@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 import ehrapy as ep
 from anndata import AnnData
+from paths import cs_transfer_path
 
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
@@ -36,12 +37,8 @@ print(">>> start 25_ml_pipeline_aki.py", flush=True)
 # -------------------------
 # Konfiguration
 # -------------------------
-H5AD_PATH = os.path.expanduser(
-    "~/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/h5ad/ops_with_patient_features.h5ad"
-)
-OUT_DIR = os.path.expanduser(
-    "~/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme"
-)
+H5AD_PATH = cs_transfer_path("h5ad", "ops_with_patient_features.h5ad")
+OUT_DIR = cs_transfer_path("Diagramme")
 os.makedirs(OUT_DIR, exist_ok=True)
 
 TARGET_CANDIDATES: List[str] = ["AKI_linked_0_7", "AKI"]  # Priorität links
@@ -367,4 +364,3 @@ if __name__ == "__main__":
         print(">>> Uncaught exception in main():", flush=True)
         traceback.print_exc()
         sys.exit(1)
-

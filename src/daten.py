@@ -1,31 +1,35 @@
 import ehrapy as ep
 import pandas as pd
 
+from paths import cs_transfer_path
+
+ORIGINAL_DATA_DIR = cs_transfer_path("Orginal Daten")
+
 # Laden der Daten aus den CSV-Dateien
 lab_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Laboratory_Kreatinin+CystatinC.csv",
+    ORIGINAL_DATA_DIR / "Laboratory_Kreatinin+CystatinC.csv",
     sep=";",
 )
 aki_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/AKI Label.csv",
+    ORIGINAL_DATA_DIR / "AKI Label.csv",
     sep=";",
 )
 patient_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Patient Master Data.csv",
+    ORIGINAL_DATA_DIR / "Patient Master Data.csv",
     sep=";",
 )
 
 # IM MOMENT WERDEN DIESE DATEN NICHT EINGELESEN, PROBLEM LOESEN
 vis_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/VIS.csv",
+    ORIGINAL_DATA_DIR / "VIS.csv",
     sep=";",
 )
 procedure_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/Procedure Supplement.csv",
+    ORIGINAL_DATA_DIR / "Procedure Supplement.csv",
     sep=";",
 )
 hlm_df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Orginal Daten/HLM Operationen.csv",
+    ORIGINAL_DATA_DIR / "HLM Operationen.csv",
     sep=";",
 )
 

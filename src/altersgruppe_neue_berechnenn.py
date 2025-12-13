@@ -4,6 +4,7 @@
 import os
 import pandas as pd
 import numpy as np
+from paths import cs_transfer_path
 
 # Matplotlib headless für Datei-Export
 import matplotlib
@@ -14,9 +15,9 @@ import matplotlib.pyplot as plt
 import ehrapy as ep
 
 # ---------------- CONFIG ----------------
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-H5 = f"{BASE}/h5ad/ops_with_patient_features.h5ad"
-OUT = f"{BASE}/Diagramme"
+BASE = cs_transfer_path()
+H5 = BASE / "h5ad" / "ops_with_patient_features.h5ad"
+OUT = BASE / "Diagramme"
 os.makedirs(OUT, exist_ok=True)
 # ---------------------------------------
 

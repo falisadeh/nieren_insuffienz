@@ -2,9 +2,9 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from anndata import AnnData
+from paths import cs_transfer_path
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-P = Path(BASE)
+P = cs_transfer_path()
 
 src = P / "analytic_ops_master.csv"
 dst_csv = P / "analytic_ops_master_ehrapy.csv"

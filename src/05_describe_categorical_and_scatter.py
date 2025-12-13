@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from anndata import read_h5ad, AnnData
+from paths import cs_transfer_path
 
 # ehrapy optional
 try:
@@ -30,7 +31,7 @@ try:
 except Exception:
     ep = None  # type: ignore
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 H5 = os.path.join(BASE, "Daten", "ops_with_patient_features.h5ad")
 OUTD = os.path.join(BASE, "Daten")
 OUTP = os.path.join(BASE, "Diagramme")

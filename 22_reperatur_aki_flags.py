@@ -2,12 +2,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from pathlib import Path
 import pandas as pd
 import numpy as np
 import ehrapy as ep
+from paths import cs_transfer_path
 
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/h5ad")
+BASE = cs_transfer_path("h5ad")
 FILES = [
     "ops_with_crea_cysc_vis_features_with_AKI.h5ad",
     "ops_with_patient_features.h5ad",
@@ -75,13 +75,12 @@ for fname in FILES:
 #Kausalen Datensatz korrekt aus ops_with_patient_features.h5ad neu bauen
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from pathlib import Path
 import pandas as pd
 import numpy as np
 import ehrapy as ep
 from anndata import AnnData
 
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 H5_OPS = BASE / "h5ad" / "ops_with_patient_features.h5ad"
 H5_OUT = BASE / "h5ad" / "causal_dataset_op_level.h5ad"
 
@@ -125,6 +124,5 @@ print("Neu geschrieben:", H5_OUT)
 vc = cdf["AKI_linked_0_7"].value_counts().sort_index()
 print("AKI=0:", int(vc.get(0,0)), "| AKI=1:", int(vc.get(1,0)), "| Anteil AKI:",
       round(100*vc.get(1,0)/len(cdf),1), "%")
-
 
 

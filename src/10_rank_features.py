@@ -18,6 +18,7 @@ import os
 import math
 import numpy as np
 import pandas as pd
+from paths import cs_transfer_path
 
 # Matplotlib: nicht-interaktives Backend (unterdrückt macOS-Dialoge)
 import matplotlib as mpl
@@ -69,7 +70,7 @@ except Exception:
     _have_sc = False
 
 # ---- Pfade (an deine Struktur angepasst)
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 H5_CANDIDATES = [
     os.path.join(BASE, "Daten", "ops_ml_processed.h5ad"),
     os.path.join(BASE, "Daten", "ops_with_patient_features.h5ad"),

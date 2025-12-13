@@ -1,6 +1,8 @@
 from anndata import read_h5ad
 import pandas as pd
-H5AD = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad"
+from paths import cs_transfer_path
+
+H5AD = cs_transfer_path("aki_ops_master_S1_survival.h5ad")
 adata = read_h5ad(H5AD)
 cols = list(adata.obs.columns)
 print(f"{len(cols)} obs-Spalten geladen.")

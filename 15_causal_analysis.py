@@ -12,9 +12,10 @@ import pandas as pd
 import numpy as np
 from anndata import AnnData
 from pathlib import Path
+from paths import cs_transfer_path
 
 # ------------------ Pfade ------------------
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 OPS_CSV   = BASE / "ops_with_aki.csv"
 PAT_CSV   = BASE / "Patient Master Data.csv"     # optional
 OUTD      = BASE / "Diagramme"
@@ -528,4 +529,3 @@ if "vis_auc_0_24" in df.columns:
         print(f"T-Test VIS AUC 0-24 (AKI vs. kein AKI): t-statistic={t_stat:.4f}, p-value={p_value:.4f}")
     else:
         print("Nicht genügend Daten für T-Test VIS AUC 0-24.")
-

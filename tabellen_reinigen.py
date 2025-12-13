@@ -1,8 +1,9 @@
 import re
 import pandas as pd
 from pathlib import Path
+from paths import cs_transfer_path
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 
 # ---------- Hilfsfunktionen ----------
 def strip_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -29,7 +30,7 @@ def normalize_sex(s):
     return pd.NA
 
 # ---------- 1) HLM Operationen ----------
-df_op = pd.read_csv(f"{BASE}/HLM Operationen.csv", sep=";")
+df_op = pd.read_csv(BASE / "HLM Operationen.csv", sep=";")
 strip_columns(df_op)
 to_str_strip(df_op, ["PMID", "SMID", "Procedure_ID"])
 parse_dates(df_op, ["Start of surgery", "End of surgery"])
@@ -38,7 +39,7 @@ parse_dates(df_op, ["Start of surgery", "End of surgery"])
 df_op = df_op[~df_op["Start of surgery"].isna()].copy()
 
 # ---------- 2) Patient Master Data ----------
-df_pat = pd.read_csv(f"{BASE}/Patient Master Data.csv", sep=";")
+df_pat = pd.read_csv(BASE / "Patient Master Data.csv", sep=";")
 strip_columns(df_pat)
 to_str_strip(df_pat, ["PMID", "Sex"])
 parse_dates(df_pat, ["DateOfBirth", "DateOfDie"])
@@ -47,7 +48,7 @@ df_pat["Sex"] = df_pat["Sex"].apply(normalize_sex)
 df_pat = df_pat.drop_duplicates(subset="PMID", keep="first").copy()
 
 # ---------- 3) AKI Label ----------
-df_aki = pd.read_csv(f"{BASE}/AKI Label.csv", sep=";")
+df_aki = pd.read_csv(BASE / "AKI Label.csv", sep=";")
 strip_columns(df_aki)
 # Tippfehler korrigieren (Duartion -> Duration), nur wenn vorhanden
 if "Duartion" in df_aki.columns and "Duration" not in df_aki.columns:
@@ -74,7 +75,7 @@ df_aki_first = (
 )
 
 # ---------- 4) Procedure Supplement (für spätere Zwecke; AKI steht hier wohl nicht drin) ----------
-df_supp = pd.read_csv(f"{BASE}/Procedure Supplement.csv", sep=";")
+df_supp = pd.read_csv(BASE / "Procedure Supplement.csv", sep=";")
 strip_columns(df_supp)
 to_str_strip(df_supp, ["PMID", "SMID", "Procedure_ID", "TimestampName"])
 parse_dates(df_supp, ["Timestamp"])
@@ -140,14 +141,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-OUT  = Path(BASE) / "Diagramme"
+OUT = BASE / "Diagramme"
 
 # Annahme: df_all = First_OP vs. AKI_Start (vorher berechnet), df_filtered = 0–7 Tage
-df_all.to_csv(Path(BASE) / "AKI_Latenz_alle.csv", index=False, sep=";")
+df_all.to_csv(BASE / "AKI_Latenz_alle.csv", index=False, sep=";")
 df_outliers = df_all[(df_all['days_to_AKI'] < 0) | (df_all['days_to_AKI'] > 7)]
-df_outliers.to_csv(Path(BASE) / "AKI_Latenz_outlier.csv", index=False, sep=";")
-df_filtered.to_csv(Path(BASE) / "AKI_Latenz_0_7.csv", index=False, sep=";")
+df_outliers.to_csv(BASE / "AKI_Latenz_outlier.csv", index=False, sep=";")
+df_filtered.to_csv(BASE / "AKI_Latenz_0_7.csv", index=False, sep=";")
 
 # Histogramm 0–7 Tage
 OUT.mkdir(exist_ok=True)
@@ -416,10 +416,7 @@ print(prio_counts.to_string())
 import pandas as pd
 
 # 1) Patientendaten laden (falls noch nicht vorhanden)
-df_pat = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Patient Master Data.csv",
-    sep=";"
-)
+df_pat = pd.read_csv(BASE / "Patient Master Data.csv", sep=";")
 df_pat.columns = df_pat.columns.str.strip()
 
 # 2) Geschlecht normalisieren
@@ -460,17 +457,16 @@ from anndata import AnnData
 import ehrapy as ep
 from pathlib import Path
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-OUT  = Path(BASE) / "Diagramme"
+OUT = BASE / "Diagramme"
 OUT.mkdir(exist_ok=True)
 
 # ---------------------------
 # 1) Rohdaten einlesen
 # ---------------------------
-df_op   = pd.read_csv(f"{BASE}/HLM Operationen.csv",      sep=";", parse_dates=["Start of surgery"])
-df_aki  = pd.read_csv(f"{BASE}/AKI Label.csv",            sep=";", parse_dates=["Start"])
-df_pat  = pd.read_csv(f"{BASE}/Patient Master Data.csv",  sep=";")
-df_supp = pd.read_csv(f"{BASE}/Procedure Supplement.csv", sep=";", parse_dates=["Timestamp"])
+df_op   = pd.read_csv(BASE / "HLM Operationen.csv",      sep=";", parse_dates=["Start of surgery"])
+df_aki  = pd.read_csv(BASE / "AKI Label.csv",            sep=";", parse_dates=["Start"])
+df_pat  = pd.read_csv(BASE / "Patient Master Data.csv",  sep=";")
+df_supp = pd.read_csv(BASE / "Procedure Supplement.csv", sep=";", parse_dates=["Timestamp"])
 
 for df in (df_op, df_aki, df_pat, df_supp):
     df.columns = df.columns.str.strip()
@@ -606,11 +602,11 @@ plt.show()
 # ---------------------------
 # 5) Speichern: CSV + .h5ad (ehrapy/AnnData)
 # ---------------------------
-ehrapy_df.to_csv(f"{BASE}/ehrapy_input_AKI_latenz_prior.csv", index=False, sep=";")
-adata.write_h5ad(f"{BASE}/aki_latenz_prior.h5ad")
+ehrapy_df.to_csv(BASE / "ehrapy_input_AKI_latenz_prior.csv", index=False, sep=";")
+adata.write_h5ad(BASE / "aki_latenz_prior.h5ad")
 
 # Optional: Einlesen über ehrapy (zeigt, dass es „in ehrapy“ läuft)
-# adata2 = ep.io.read_csv(f"{BASE}/ehrapy_input_AKI_latenz_prior.csv")
-# adata2.write_h5ad(f"{BASE}/aki_latenz_prior_from_csv.h5ad")
+# adata2 = ep.io.read_csv(BASE / "ehrapy_input_AKI_latenz_prior.csv")
+# adata2.write_h5ad(BASE / "aki_latenz_prior_from_csv.h5ad")
 
 # %%

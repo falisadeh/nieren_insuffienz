@@ -5,8 +5,9 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import anndata as ad
+from paths import cs_transfer_path
 
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 DIR_ORIG = BASE / "Original Daten"
 CSV_HLM = DIR_ORIG / "HLM Operationen.csv"
 CSV_PAT = DIR_ORIG / "Patient Master Data.csv"

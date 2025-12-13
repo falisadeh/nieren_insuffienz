@@ -17,8 +17,9 @@ import numpy as np
 from anndata import AnnData
 import ehrapy as ep
 from datetime import datetime, timezone
+from paths import cs_transfer_path
 
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 IN = {
     "ops_with_patient_features": BASE / "ops_with_patient_features.csv",
     "ops_with_crea_cysc_vis_features_with_AKI": BASE / "ops_with_crea_cysc_vis_features_with_AKI.csv",
@@ -195,6 +196,6 @@ if p.exists():
 
 print("Fertig.")
 import ehrapy as ep
-ad = ep.io.read_h5ad("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/h5ad/ops_with_patient_features.h5ad")
+    ad = ep.io.read_h5ad(str(cs_transfer_path("h5ad", "ops_with_patient_features.h5ad")))
 print(ad.obs.shape)
 print(ad.obs.columns.tolist()[:20])  # erste 20 Spalten

@@ -5,8 +5,9 @@ import pandas as pd
 import numpy as np
 from anndata import AnnData
 from pathlib import Path
+from paths import cs_transfer_path
 
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 OPS_H5AD_IN  = BASE / "ops_with_crea_cysc_vis_features.h5ad"
 AKI_SRC_CSV  = BASE / "AKI Label.csv"  # semikolon-getrennt
 OPS_CSV_OUT  = BASE / "ops_with_aki.csv"
@@ -333,4 +334,3 @@ print("Ohne Progression:", n_no_progress, f"({n_no_progress/n_pat*100:.1f}%)")
 
 print("\nVerteilung max. AKI-Stufe:")
 print(progression["AKI_stage_max"].value_counts().sort_index())
-

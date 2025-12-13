@@ -14,6 +14,7 @@ import os
 import numpy as np
 import pandas as pd
 from anndata import read_h5ad
+from paths import cs_transfer_path
 
 FORCE_FALLBACK_ONLY = True
 
@@ -28,7 +29,7 @@ try:
 except Exception:
     stats = None  # type: ignore
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 H5_MAIN = os.path.join(BASE, "Daten", "ops_ml_processed.h5ad")
 H5_FALL = os.path.join(BASE, "Daten", "ops_with_patient_features.h5ad")
 OUT_CSV = os.path.join(BASE, "Daten", "rank_features_ttest.csv")

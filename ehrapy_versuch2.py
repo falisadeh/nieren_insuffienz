@@ -3,12 +3,13 @@
 import pandas as pd
 import ehrapy as ep
 import matplotlib.pyplot as plt
+from paths import cs_transfer_path
 
 # 1. CSV-Dateien einlesen
-df_aki = pd.read_csv("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/AKI Label.csv", sep=";")
-df_hlm = pd.read_csv("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/HLM Operationen.csv", sep=";")
-df_patient = pd.read_csv("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Patient Master Data.csv", sep=";")
-df_proc = pd.read_csv("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Procedure Supplement.csv", sep=";")  
+df_aki = pd.read_csv(cs_transfer_path("AKI Label.csv"), sep=";")
+df_hlm = pd.read_csv(cs_transfer_path("HLM Operationen.csv"), sep=";")
+df_patient = pd.read_csv(cs_transfer_path("Patient Master Data.csv"), sep=";")
+df_proc = pd.read_csv(cs_transfer_path("Procedure Supplement.csv"), sep=";")
 
 # 2. Spalten bereinigen & Datumsformate umwandeln
 df_patient.columns = df_patient.columns.str.strip()

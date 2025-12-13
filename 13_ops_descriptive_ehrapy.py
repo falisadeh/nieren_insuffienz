@@ -4,9 +4,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
+from paths import cs_transfer_path
 
 # ==== Pfad anpassen ====
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 H5 = BASE / "ops_with_crea_cysc_vis_features.h5ad"
 OUT = BASE / "fig_ops_desc"
 OUT.mkdir(parents=True, exist_ok=True)

@@ -27,7 +27,7 @@ So viel wie möglich wird ehrapy genutzt, ohne externe Abhängigkeiten zu erzwin
   ehrapy-Schritte (z. B. Visualisierung) nachgelagert erfolgen.
 
 Pfadstruktur (aus Kontext):
-  Basis: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer
+  Basis: ${CS_TRANSFER_DIR}
   Eingabe: Original Daten/*.csv (Semikolon-getrennt)
   Ausgabe: Daten/ops_with_patient_features.h5ad
 """
@@ -42,6 +42,7 @@ from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from paths import cs_transfer_path
 
 # Optional: ehrapy, wenn vorhanden
 try:
@@ -49,7 +50,7 @@ try:
 except Exception:  # ehrapy ist optional – Skript läuft auch ohne
     ep = None  # type: ignore
 
-BASE_DIR = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE_DIR = cs_transfer_path()
 IN_DIR = os.path.join(BASE_DIR, "Original Daten")
 OUT_DIR = os.path.join(BASE_DIR, "Daten")
 OUT_H5AD = os.path.join(OUT_DIR, "ops_with_patient_features.h5ad")

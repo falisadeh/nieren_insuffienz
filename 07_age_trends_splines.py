@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from patsy import dmatrix
 
+from paths import cs_transfer_path
+
 try:
     from statsmodels.nonparametric.smoothers_lowess import lowess
     HAS_LOESS = True
@@ -24,8 +26,8 @@ except Exception:
     HAS_LOESS = False
 
 # ------------------------- Pfade -------------------------
-H5AD = r"/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad"
-OUT  = r"/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme"
+H5AD = cs_transfer_path("aki_ops_master_S1_survival.h5ad")
+OUT = cs_transfer_path("Diagramme")
 os.makedirs(OUT, exist_ok=True)
 
 # --------------------- Daten laden -----------------------

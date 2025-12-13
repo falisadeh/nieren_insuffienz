@@ -7,8 +7,9 @@ import numpy as np
 from scipy.stats import mannwhitneyu
 from statsmodels.stats.multitest import multipletests
 from pathlib import Path
+from paths import cs_transfer_path
 
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 INP  = BASE / "h5ad" / "ops_with_patient_features.h5ad"
 OUT  = BASE / "Audit" / "mannwhitney_lab_vis_stats.csv"
 OUT.parent.mkdir(parents=True, exist_ok=True)

@@ -21,12 +21,12 @@ from __future__ import annotations
 import numpy as np
 import ehrapy as ep
 from anndata import read_h5ad
+from paths import cs_transfer_path
 DO_PSM = False
 import os, sys
 print("LADE DATEI:", __file__)
 # ========================= Pfad anpassen =========================
-H5AD_PATH = \
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master.h5ad"
+H5AD_PATH = cs_transfer_path("aki_ops_master.h5ad")
 # ================================================================
 
 # ---------- Lauf-Parameter ----------

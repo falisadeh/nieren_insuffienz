@@ -13,7 +13,7 @@ Baseline-Modelle für AKI (0–7 Tage) auf ops_ml_processed.h5ad
 - Metriken: AUROC, AUPRC, Accuracy, Recall, Precision, F1
 - Schwellenwahl: Youden-J (ROC) + bestes F1 (validierungsbasiert) → Confusion-Matrizen auf Test
 - Plots: ROC, PR, Kalibration, Koeffizienten-Balken
-- Artefakte: Modelle/Plots/Tabellen unter cs-transfer/Daten bzw. cs-transfer/Diagramme
+- Artefakte: Modelle/Plots/Tabellen unter ${CS_TRANSFER_DIR}/Daten bzw. ${CS_TRANSFER_DIR}/Diagramme
 
 Voraussetzungen: anndata, numpy, pandas, scikit-learn, matplotlib, scipy (optional)
 """
@@ -23,6 +23,7 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 from anndata import read_h5ad
+from paths import cs_transfer_path
 
 # Matplotlib headless
 import matplotlib as mpl
@@ -55,7 +56,7 @@ try:
 except Exception:
     spearmanr = None  # type: ignore
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 H5_MAIN = os.path.join(BASE, "Daten", "ops_ml_processed.h5ad")
 H5_FALL = os.path.join(BASE, "Daten", "ops_with_patient_features.h5ad")
 OUT_DIR_PLOTS = os.path.join(BASE, "Diagramme")

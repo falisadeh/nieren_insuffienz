@@ -24,11 +24,12 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 import anndata as ad
+from paths import cs_transfer_path
 
 ad.settings.allow_write_nullable_strings = True
 
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 IN_DIR = os.path.join(BASE, "Original Daten")
 
 PM_PATH = os.path.join(IN_DIR, "Patient Master Data.csv")

@@ -14,7 +14,6 @@ Ausgabe:
   Diagramme/ROC_<variable>.png               (optional pro Variable)
 """
 
-from pathlib import Path
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -27,9 +26,10 @@ from scipy.stats import mannwhitneyu
 from statsmodels.stats.multitest import multipletests
 from sklearn.metrics import roc_auc_score, roc_curve
 import ehrapy as ep
+from paths import cs_transfer_path
 
 # ------------------ Pfade ------------------
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 H5AD = BASE / "h5ad" / "ops_with_patient_features.h5ad"
 OUTP = BASE / "Audit"
 OUTF = BASE / "Diagramme"

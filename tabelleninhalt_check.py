@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os, glob, sys
 import ehrapy as ep
+from paths import cs_transfer_path
 
 EXPECTED = [
     "crea_baseline","crea_peak_0_48","crea_delta_0_48","crea_rate_0_48",
@@ -9,17 +10,17 @@ EXPECTED = [
     "Sex_norm","age_years_at_first_op","n_ops","highest_AKI_stage_0_7","duration_hours","AKI_any_0_7",
 ]
 
-BASE = os.path.expanduser("~/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 CANDIDATES = [
-    os.path.expanduser("~/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/h5ad/ops_with_patient_features.h5ad"),
-    os.path.expanduser("~/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/h5ad/ops_with_patient_features_ehrapy_enriched.h5ad"),
+    BASE / "h5ad" / "ops_with_patient_features.h5ad",
+    BASE / "h5ad" / "ops_with_patient_features_ehrapy_enriched.h5ad",
 ]
 
 def find_h5ad():
     for p in CANDIDATES:
         if os.path.exists(p):
             return p
-    hits = glob.glob(os.path.join(BASE, "**", "*.h5ad"), recursive=True)
+    hits = glob.glob(str(BASE / "**" / "*.h5ad"), recursive=True)
     if not hits:
         return None
     # bevorzuge Dateien, die wie unsere heißen

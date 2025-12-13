@@ -1,10 +1,11 @@
 import pandas as pd, numpy as np
 import anndata as ad
-from pathlib import Path
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-H5_OPS = f"{BASE}/h5ad/ops_with_patient_features.h5ad"
-CSV_HLM = f"{BASE}/Original Daten/HLM Operationen.csv"
+from paths import cs_transfer_path
+
+BASE = cs_transfer_path()
+H5_OPS = BASE / "h5ad" / "ops_with_patient_features.h5ad"
+CSV_HLM = BASE / "Original Daten" / "HLM Operationen.csv"
 
 
 def norm_id(x):
@@ -78,11 +79,9 @@ print("Eindeutige Kinder (final) :", ops_df["PMID_final"].nunique())
 # ==== ab hier ANSCHLUSS an  aktuellen Stand mit ops_df (enthält PMID_final)! ====
 import pandas as pd, numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-CSV_PAT = f"{BASE}/Original Daten/Patient Master Data.csv"
-OUTD = Path(BASE) / "Diagramme"
+CSV_PAT = BASE / "Original Daten" / "Patient Master Data.csv"
+OUTD = BASE / "Diagramme"
 OUTD.mkdir(parents=True, exist_ok=True)
 
 

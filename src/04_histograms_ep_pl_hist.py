@@ -16,6 +16,7 @@ from typing import List, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
 from anndata import read_h5ad
+from paths import cs_transfer_path
 
 # ehrapy optional (für Settings/Typen)
 try:
@@ -23,7 +24,7 @@ try:
 except Exception:
     ep = None  # type: ignore
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 H5 = os.path.join(BASE, "Daten", "ops_with_patient_features.h5ad")
 OUT = os.path.join(BASE, "Diagramme")
 os.makedirs(OUT, exist_ok=True)

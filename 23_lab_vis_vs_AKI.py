@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 import ehrapy as ep
 from anndata import AnnData
+from paths import cs_transfer_path
 
 from scipy.stats import mannwhitneyu
 from statsmodels.stats.multitest import multipletests
@@ -37,7 +38,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import roc_auc_score
 
 # ------------------ Pfade ------------------
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 H5AD = BASE / "h5ad" / "ops_with_patient_features.h5ad"
 OUTP = BASE / "Audit"
 OUTF = BASE / "Diagramme"

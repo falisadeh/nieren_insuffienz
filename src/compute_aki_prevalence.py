@@ -1,10 +1,13 @@
 # Kontrolle
-# "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/AKI Label.csv"
+# "${CS_TRANSFER_DIR}/Original Daten/AKI Label.csv"
 import pandas as pd
+from paths import cs_transfer_path
+
+AKI_LABEL = cs_transfer_path("Original Daten", "AKI Label.csv")
 
 # CSV einlesen
 df = pd.read_csv(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/AKI Label.csv",
+    AKI_LABEL,
     sep=";",
     encoding="utf-8-sig",
 )

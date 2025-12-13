@@ -20,13 +20,14 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 from anndata import read_h5ad
+from paths import cs_transfer_path
 
 try:
     import ehrapy as ep
 except Exception:
     ep = None  # type: ignore
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 IN_H5 = os.path.join(BASE, "Daten", "ops_with_patient_features.h5ad")
 OUT_H5 = os.path.join(BASE, "Daten", "ops_ml_processed.h5ad")
 OUT_TXT = os.path.join(BASE, "Daten", "ml_preproc_report.txt")

@@ -4,12 +4,13 @@ import numpy as np
 import pandas as pd
 import anndata as ad
 import matplotlib.pyplot as plt
-from pathlib import Path
+
+from paths import cs_transfer_path
 
 # Pfade anpassen falls nötig
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-H5AD = f"{BASE}/h5ad/ops_with_patient_features.h5ad"  # n=1209 (gereinigt)
-OUTD = Path(BASE) / "Diagramme"
+BASE = cs_transfer_path()
+H5AD = BASE / "h5ad" / "ops_with_patient_features.h5ad"  # n=1209 (gereinigt)
+OUTD = BASE / "Diagramme"
 OUTD.mkdir(parents=True, exist_ok=True)
 
 # Laden

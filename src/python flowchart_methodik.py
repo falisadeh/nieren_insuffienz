@@ -3,11 +3,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+from paths import cs_transfer_path
 
 # ----------------------------------
 # Ausgaben (dein iCloud-Ordner)
 # ----------------------------------
-OUT_DIR = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme"
+OUT_DIR = cs_transfer_path("Diagramme")
 os.makedirs(OUT_DIR, exist_ok=True)
 OUT_PNG = os.path.join(OUT_DIR, "ehrapy_method_flowchart.png")
 OUT_PDF = os.path.join(OUT_DIR, "ehrapy_method_flowchart.pdf")

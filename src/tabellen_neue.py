@@ -25,12 +25,13 @@ import pandas as pd
 import anndata as ad
 import datetime as dt
 import warnings
+from paths import cs_transfer_path
 
 warnings.filterwarnings("ignore", message=".*Transforming to str index.*")
 
 
 # ===================== Pfade anpassen =====================
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 H5AD_OPS = BASE / "h5ad" / "ops_with_patient_features.h5ad"  # 1209 OPs
 H5AD_ENR = BASE / "h5ad" / "ops_with_patient_features_ehrapy_enriched.h5ad"  # optional
 CSV_HLM = BASE / "Original Daten" / "HLM Operationen.csv"  # ; getrennt

@@ -4,7 +4,9 @@ import pandas as pd
 import numpy as np
 from anndata import read_h5ad
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+from paths import cs_transfer_path
+
+BASE = cs_transfer_path()
 P = Path(BASE)
 
 FILES = {

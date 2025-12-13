@@ -4,8 +4,9 @@ import numpy as np
 from anndata import AnnData
 from pathlib import Path
 import networkx as nx
+from paths import cs_transfer_path
 
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 AD_CSLIM = BASE / "h5ad" / "causal_dataset_op_level.h5ad"
 
 ad_in = ep.io.read_h5ad(str(AD_CSLIM))

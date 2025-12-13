@@ -64,9 +64,10 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 import matplotlib.pyplot as plt
+from paths import cs_transfer_path
 
 # ---------------------- Pfade & Ordner ----------------------
-base_dir = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+base_dir = cs_transfer_path()
 path_ops_pref = os.path.join(base_dir, "ops_with_aki.csv")
 path_ops_fallback = os.path.join(base_dir, "analytic_ops_master_ehrapy.csv")
 # Ausgaben

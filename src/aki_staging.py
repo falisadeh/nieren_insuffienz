@@ -5,9 +5,11 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from paths import cs_transfer_path
+
 # Pfade
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme"
-CSV_CLEAN = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Daten/ehrapy_input_clean.csv"
+BASE = cs_transfer_path("Diagramme")
+CSV_CLEAN = cs_transfer_path("Daten", "ehrapy_input_clean.csv")
 os.makedirs(BASE, exist_ok=True)
 
 # Daten laden

@@ -3,11 +3,12 @@ import os, numpy as np, pandas as pd, matplotlib.pyplot as plt
 from anndata import read_h5ad
 import statsmodels.api as sm
 from patsy import dmatrix, dmatrices
+from paths import cs_transfer_path
 
 # --------- Pfade anpassen ---------
-H5AD = r"/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad"
-PATIENT_MASTER = r"/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Patient Master Data.csv"
-OUT  = r"/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme"
+H5AD = cs_transfer_path("aki_ops_master_S1_survival.h5ad")
+PATIENT_MASTER = cs_transfer_path("Patient Master Data.csv")
+OUT = cs_transfer_path("Diagramme")
 os.makedirs(OUT, exist_ok=True)
 
 # --------- Helfer ---------

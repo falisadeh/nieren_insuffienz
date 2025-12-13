@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from paths import cs_transfer_path
 
 # Schalter & Helper ganz oben (nach Imports)
 CHECKS = True
@@ -15,7 +16,7 @@ def check(name: str, cond: bool, msg_if_fail: str):
 
 
 # ================== Pfade ==================
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 OPS_CSV = BASE / "HLM Operationen.csv"
 PAT_CSV = BASE / "Patient Master Data.csv"
 AKI_CSV = BASE / "AKI Label.csv"

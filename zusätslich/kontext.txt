@@ -6,7 +6,7 @@ Meine Bachelorarbeit handelt von Wie effektiv unterstützt das Framework ehrapy 
 von Risikofaktoren für akutes Nierenversagen bei Kindern 
 nach Herzoperationen anhand eines angereicherten Routinedatensatzes?
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/VIS.csv ---
+--- DATEI: ${CS_TRANSFER_DIR}/Original Daten/VIS.csv ---
 
 ﻿PMID;SMID;Timestamp;vis
 300009;300009001;2152-10-22 14:55:00.000;0.000
@@ -15,7 +15,7 @@ nach Herzoperationen anhand eines angereicherten Routinedatensatzes?
 300009;300009001;2152-10-23 17:40:07.000;6.790
 
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/Laboratory_Kreatinin+CystatinC.csv ---
+--- DATEI: ${CS_TRANSFER_DIR}/Original Daten/Laboratory_Kreatinin+CystatinC.csv ---
 
 ﻿PMID;SMID;CollectionTimestamp;Parameter;QuantitativeValue;LaborPanelID;SpecimenID;Unit;LOINC;Ward;Ward_Type
 300009;300009001;2152-10-20 11:10:00.000;S-Creat/enz;28;300576393;300829936KCH;µmol/l;14682-9;J;Pediatric Cardiology
@@ -24,7 +24,7 @@ nach Herzoperationen anhand eines angereicherten Routinedatensatzes?
 300009;300009001;2152-10-24 14:55:00.000;S-Creat/enz;89;300048801;300918457KCH;µmol/l;14682-9;G;Interdisciplinary pediatric intensive care unit
 
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/AKI Label.csv ---
+--- DATEI: ${CS_TRANSFER_DIR}/Original Daten/AKI Label.csv ---
 
 ﻿PMID;Duartion;Start;End;Decision
 300009;181020000;2152-10-23 23:47:00.000;2152-10-26 02:04:00.000;AKI 2
@@ -33,7 +33,7 @@ nach Herzoperationen anhand eines angereicherten Routinedatensatzes?
 300012;1209300000;2153-05-17 00:43:00.000;2153-05-31 00:38:00.000;AKI 1
 
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/Patient Master Data.csv ---
+--- DATEI: ${CS_TRANSFER_DIR}/Original Daten/Patient Master Data.csv ---
 
 ﻿PMID;Sex;DateOfBirth;DateOfDie
 300009;f;2152-03-31 00:00:00.000;NULL
@@ -42,7 +42,7 @@ nach Herzoperationen anhand eines angereicherten Routinedatensatzes?
 300016;m;2151-05-31 00:00:00.000;NULL
 
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/Procedure Supplement.csv ---
+--- DATEI: ${CS_TRANSFER_DIR}/Original Daten/Procedure Supplement.csv ---
 
 ﻿PMID;SMID;TimestampName;Timestamp;Procedure_ID
 300009;300009001;AZPFLVORV;2152-10-23 09:41:00.000;300004306
@@ -51,7 +51,7 @@ nach Herzoperationen anhand eines angereicherten Routinedatensatzes?
 300009;300009001;Surgery preparation from;2152-10-23 10:07:00.000;300004306
 
 
---- DATEI: /Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Original Daten/HLM Operationen.csv ---
+--- DATEI: ${CS_TRANSFER_DIR}/Original Daten/HLM Operationen.csv ---
 
 ﻿PMID;SMID;Procedure_ID;Start of surgery;End of surgery;Tx?
 300009;300009001;300004306;2152-10-23 11:34:00.000;2152-10-23 17:20:00.000;NULL
@@ -94,4 +94,3 @@ Erstelle eine Datei mit allen Daten in ehrapy und imputiere fehlende Werte. Spei
 
 Bitte antworte nur auf Deutsch.
 Antworte nur auf Basis der Informationen in diesem Kontext.
-

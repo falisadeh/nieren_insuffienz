@@ -3,8 +3,10 @@ import numpy as np
 import pandas as pd
 from anndata import read_h5ad
 
-H5 = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad"
-OUT_DIR = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme"
+from paths import cs_transfer_path
+
+H5 = cs_transfer_path("aki_ops_master_S1_survival.h5ad")
+OUT_DIR = cs_transfer_path("Diagramme")
 CSV_OUT = os.path.join(OUT_DIR, "Table1_OP_level_with_stats.csv")
 DOCX_OUT = os.path.join(OUT_DIR, "Table1_OP_level_with_stats.docx")
 

@@ -7,8 +7,9 @@ import sys
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from paths import cs_transfer_path
 
-BASE = os.path.expanduser("~/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 
 # Quellen (Semikolon-getrennt bei CSVs)
 CSV_OP_MASTER = os.path.join(BASE, "analytic_ops_master_ehrapy.csv")      # 1209 OPs, Procedure_ID eindeutig

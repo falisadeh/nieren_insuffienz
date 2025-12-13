@@ -3,10 +3,11 @@ import os, numpy as np, pandas as pd, matplotlib.pyplot as plt
 from anndata import read_h5ad
 import statsmodels.api as sm
 from patsy import dmatrix
+from paths import cs_transfer_path
 
-H5AD = r"/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad"
-PATIENT_MASTER = r"/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Patient Master Data.csv"
-OUT  = r"/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme"
+H5AD = cs_transfer_path("aki_ops_master_S1_survival.h5ad")
+PATIENT_MASTER = cs_transfer_path("Patient Master Data.csv")
+OUT = cs_transfer_path("Diagramme")
 os.makedirs(OUT, exist_ok=True)
 
 # ---------- Helpers ----------
@@ -189,6 +190,5 @@ plt.tight_layout()
 out3 = os.path.join(OUT, "scatter_plus_splines_by_sex.png")
 plt.savefig(out3, bbox_inches="tight"); plt.close()
 print("Gespeichert:", out3)
-
 
 

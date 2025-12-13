@@ -24,13 +24,14 @@ import numpy as np
 import pandas as pd
 from anndata import read_h5ad, AnnData
 from scipy import stats
+from paths import cs_transfer_path
 
 try:
     import ehrapy as ep  # type: ignore
 except Exception:
     ep = None  # type: ignore
 
-BASE_DIR = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE_DIR = cs_transfer_path()
 H5_PATH = os.path.join(BASE_DIR, "Daten", "ops_with_patient_features.h5ad")
 OUT_DIR = os.path.join(BASE_DIR, "Daten")
 os.makedirs(OUT_DIR, exist_ok=True)

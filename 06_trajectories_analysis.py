@@ -23,6 +23,7 @@ import math
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from paths import cs_transfer_path
 
 # Plot-Einstellungen
 plt.rcParams["figure.dpi"] = 120
@@ -31,10 +32,9 @@ plt.rcParams["savefig.bbox"] = "tight"
 # -----------------------------
 # Pfade
 # -----------------------------
-HOME = os.path.expanduser("~")
-BASE = os.path.join(HOME, "Library", "Mobile Documents", "com~apple~CloudDocs", "cs-transfer")
-H5AD_PATH = os.path.join(BASE, "aki_ops_master_S1_survival.h5ad")
-OUTDIR = os.path.join(BASE, "Diagramme")
+BASE = cs_transfer_path()
+H5AD_PATH = BASE / "aki_ops_master_S1_survival.h5ad"
+OUTDIR = BASE / "Diagramme"
 os.makedirs(OUTDIR, exist_ok=True)
 
 # -----------------------------
@@ -188,4 +188,3 @@ print("Fertig.")
 print(f"- {out1}")
 print(f"- {out2}")
 print(f"- {out3}")
-

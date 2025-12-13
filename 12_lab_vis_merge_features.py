@@ -5,9 +5,10 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from anndata import AnnData
+from paths import cs_transfer_path
 
 # ==================== Pfade ====================
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 p_ops = BASE / "HLM Operationen.csv"                 # OP-Tabelle (wie bisher)
 p_lab_harm = BASE / "lab_crea_cysc_harmonized.csv"   # aus Schritt 11
 p_vis_clean = BASE / "vis_raw_clean.csv"             # aus Schritt 11

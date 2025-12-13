@@ -11,12 +11,12 @@ Decision Tree + Random Forest für AKI (0–7 Tage) auf deinem Datensatz.
 Ausführen (Beispiele):
   python 08_tree_and_forest_analysis.py \
       --input \
-      "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad" \
+      "${CS_TRANSFER_DIR}/aki_ops_master_S1_survival.h5ad" \
       --input-type h5ad
 
   python 08_tree_and_forest_analysis.py \
       --input \
-      "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/ehrapy_input.csv" \
+      "${CS_TRANSFER_DIR}/ehrapy_input.csv" \
       --input-type csv
 
 Voraussetzungen:
@@ -34,6 +34,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from paths import cs_transfer_path
 
 # Optional: H5AD einlesen
 try:
@@ -65,12 +66,12 @@ except Exception:
     GRAPHVIZ_AVAILABLE = False
 
 
-DEFAULT_OUTPUT_DIR = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme")
+DEFAULT_OUTPUT_DIR = cs_transfer_path("Diagramme")
 DEFAULT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Standard-Pfade aus deinem Projektkontext
-DEFAULT_H5AD = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad")
-DEFAULT_CSV = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/ehrapy_input.csv")
+DEFAULT_H5AD = cs_transfer_path("aki_ops_master_S1_survival.h5ad")
+DEFAULT_CSV = cs_transfer_path("ehrapy_input.csv")
 
 # Erwartete Spaltennamen in adata.obs oder CSV
 TARGET_COL = "AKI_linked_0_7"  # binär 0/1

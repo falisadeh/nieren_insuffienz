@@ -5,12 +5,13 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from anndata import AnnData
-import ehrapy as ep  
+import ehrapy as ep
+from paths import cs_transfer_path
 # Pfade
 LAB_SRC = "/Users/fa/Downloads/cs-transfer/Laborwerte_Kreatinin+CystatinC.csv"
 VIS_SRC = "/Users/fa/Downloads/cs-transfer/VIS.csv"
 
-OUT_DIR = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+OUT_DIR = cs_transfer_path()
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Einlese-Helfer 
@@ -178,4 +179,3 @@ print(" -", OUT_DIR / "vis_raw_clean.csv")
 print(" -", OUT_DIR / "lab_crea_cysc_harmonized.csv")
 print(" -", OUT_DIR / "lab_raw_clean_ehrapy.h5ad")
 print(" -", OUT_DIR / "vis_raw_clean_ehrapy.h5ad")
-

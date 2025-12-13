@@ -6,9 +6,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import ehrapy as ep
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
-H5 = f"{BASE}/h5ad/ops_with_patient_features.h5ad"
-OUT = f"{BASE}/Diagramme"
+from paths import cs_transfer_path
+
+BASE = cs_transfer_path()
+H5 = BASE / "h5ad" / "ops_with_patient_features.h5ad"
+OUT = BASE / "Diagramme"
 os.makedirs(OUT, exist_ok=True)
 
 adata = ep.io.read_h5ad(H5)

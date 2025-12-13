@@ -1,23 +1,21 @@
 # %%
+import os
+from pathlib import Path
+
 import anndata as ad
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+from paths import cs_transfer_path
 
 # Beispiel: eine Datei öffnen
-adata = ad.read_h5ad(
-    "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/h5ad/ops_with_patient_features.h5ad"
-)
+adata = ad.read_h5ad(cs_transfer_path("h5ad", "ops_with_patient_features.h5ad"))
 
 print("Spalten in .obs:")
 print(adata.obs.columns.tolist())
 print("\nErste 5 Zeilen:")
 print(adata.obs.head())
-
-# # === 0) Setup ===
-import os
-from pathlib import Path
-import numpy as np
-import pandas as pd
-import anndata as ad
-import matplotlib.pyplot as plt
 
 # Kandidaten (passe Pfade an, falls nötig)
 candidates = [
@@ -26,12 +24,12 @@ candidates = [
     "analytic_patient_summary_v2.h5ad",
     "causal_dataset_op_level.h5ad",
 ]
-base = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"  # dein Projektordner
+base = cs_transfer_path()  # dein Projektordner
 candidates = [
     (
         str(Path("/mnt/data") / Path(x).name)
         if os.path.exists("/mnt/data")
-        else str(Path(base) / "h5ad" / Path(x).name)
+        else str(base / "h5ad" / Path(x).name)
     )
     for x in candidates
 ]
@@ -167,7 +165,7 @@ plt.ylabel("Häufigkeit")
 plt.legend()
 plt.tight_layout()
 
-out_dir = Path(base) / "Diagramme"
+out_dir = base / "Diagramme"
 out_dir.mkdir(parents=True, exist_ok=True)
 out_path = out_dir / "hist_operationsdauer_nach_AKI.png"
 plt.savefig(out_path, dpi=200)

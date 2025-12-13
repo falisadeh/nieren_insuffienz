@@ -36,6 +36,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from paths import cs_transfer_path
+
 # ehrapy/AnnData laden (robust mit Fallback)
 try:
     import ehrapy as ep  # type: ignore
@@ -59,15 +61,9 @@ except Exception as e:
 # ---------------------------------
 @dataclass
 class Config:
-    PATH_H5AD: str = (
-        "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master.h5ad"
-    )
-    SAVE_DIR: str = (
-        "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme"
-    )
-    OUT_H5AD: str = (
-        "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/aki_ops_master_S1_survival.h5ad"
-    )
+    PATH_H5AD: str = str(cs_transfer_path("aki_ops_master.h5ad"))
+    SAVE_DIR: str = str(cs_transfer_path("Diagramme"))
+    OUT_H5AD: str = str(cs_transfer_path("aki_ops_master_S1_survival.h5ad"))
     WINDOW_DAYS: int = 7
 
 CFG = Config()
@@ -1403,6 +1399,5 @@ if __name__ == "__main__":
     
 
 # %%
-
 
 

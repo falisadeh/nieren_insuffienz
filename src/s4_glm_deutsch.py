@@ -1,12 +1,13 @@
 import os, numpy as np, pandas as pd, matplotlib.pyplot as plt
+from paths import cs_transfer_path
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
+BASE = cs_transfer_path()
 CSV = f"{BASE}/Daten/S4_glm_cluster_or.csv"
 OUT = f"{BASE}/Diagramme/Forest_OR_clean.png"
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
-#'/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme/S4_glm_cluster_or.csv'
-#'/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Diagramme/S4_forest_or.png'
-#'/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/S4_glm_cluster_or.csv'
+#'${CS_TRANSFER_DIR}/Diagramme/S4_glm_cluster_or.csv'
+#'${CS_TRANSFER_DIR}/Diagramme/S4_forest_or.png'
+#'${CS_TRANSFER_DIR}/S4_glm_cluster_or.csv'
 df = pd.read_csv(CSV)
 df = df[df["Term"] != "const"].copy()  # Intercept raus
 df = df[["Term", "OR", "CI_low", "CI_high"]].dropna()
@@ -49,7 +50,6 @@ plt.close()
 print("Gespeichert:", OUT)
 import os, numpy as np, pandas as pd, matplotlib.pyplot as plt
 
-BASE = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer"
 CSV = f"{BASE}/S4_glm_cluster_or.csv"  # ggf. anpassen
 OUT = f"{BASE}/Diagramme/Forest_OR_clean_with_ref.png"
 os.makedirs(os.path.dirname(OUT), exist_ok=True)

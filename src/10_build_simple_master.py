@@ -1,11 +1,11 @@
 # Sicherheitskontrole
 # -*- coding: utf-8 -*-
-from pathlib import Path
 import numpy as np
 import pandas as pd
 import anndata as ad
+from paths import cs_transfer_path
 
-BASE = Path("/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer")
+BASE = cs_transfer_path()
 DIR_ORIG = BASE / "Original Daten"
 CSV_HLM = DIR_ORIG / "HLM Operationen.csv"
 CSV_PAT = DIR_ORIG / "Patient Master Data.csv"
@@ -129,18 +129,16 @@ adata = ad.AnnData(X=X, obs=ops_h)
 adata.write_h5ad(OUT_H5AD)
 print("h5ad gespeichert:", OUT_H5AD)
 
-import pandas as pd
 
-csv = "/Users/fa/Library/Mobile Documents/com~apple~CloudDocs/cs-transfer/Daten/ops_master_simple.csv"
-df = pd.read_csv(csv)
+df = pd.read_csv(OUT_CSV)
 
 print("OPs:", len(df))
 print("Eindeutige Patienten:", df["PMID_final"].nunique())
 print(df.drop_duplicates("PMID_final")["Geschlecht"].value_counts())
 assert df["PMID_final"].notna().all()  # jede OP hat eine Patient-ID
-import pandas as pd, matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
-df = pd.read_csv(csv)
+df = pd.read_csv(OUT_CSV)
 
 pat = df.drop_duplicates("PMID_final")
 counts = (

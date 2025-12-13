@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
-# Baut das AnnData (.h5ad) für die Analysen / ML.
+# Baut die AnnData-Datei (.h5ad) für Analysen/ML.
 # Nutzung:
-#   ./scripts/2_build_dataset.sh
+#   ./src/2_build_dataset.sh
 set -euo pipefail
-cd "$(dirname "$0")/.."
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
+CONDA_ENV="${CONDA_ENV:-ehrapy_ml}"
+CONDA_SH="/opt/miniconda3/etc/profile.d/conda.sh"
+if [[ ! -f "$CONDA_SH" ]]; then
+  echo "Conda initialisation file not found: $CONDA_SH" >&2
+  exit 1
+fi
 
 # Conda aktivieren
-source /opt/miniconda3/etc/profile.d/conda.sh
-conda activate ehrapy_ml
+# shellcheck disable=SC1090
+source "$CONDA_SH"
+conda activate "$CONDA_ENV"
 
 python src/00_build_anndata_cli.py \
   --ops "Original Daten/HLM Operationen.csv" \

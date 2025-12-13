@@ -21,10 +21,20 @@ Laufbeispiel:
 
 from __future__ import annotations
 from pathlib import Path
-import pandas as pd
-import numpy as np
-from anndata import AnnData
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from anndata import AnnData
+from pandas.api.types import (
+    is_bool_dtype,
+    is_categorical_dtype,
+    is_datetime64_any_dtype,
+    is_datetime64tz_dtype,
+    is_integer_dtype,
+    is_timedelta64_dtype,
+)
+
 from paths import cs_transfer_path
 
 # ---------------------------
@@ -237,9 +247,6 @@ def plot_age_distribution_for_op(
 # ---------------
 # (Optional) AKI
 # ---------------
-from pandas.api.types import is_datetime64_any_dtype, is_datetime64tz_dtype
-
-
 def _to_naive_datetime(s: pd.Series) -> pd.Series:
     """Nach datetime konvertieren und ggf. Zeitzone entfernen."""
     s = pd.to_datetime(s, errors="coerce")
@@ -327,15 +334,6 @@ def link_aki_0_7_days(df_ops: pd.DataFrame, aki_csv: Path) -> pd.DataFrame:
     )
 
     return merged
-
-
-from pandas.api.types import (
-    is_datetime64_any_dtype,
-    is_timedelta64_dtype,
-    is_categorical_dtype,
-    is_bool_dtype,
-    is_integer_dtype,
-)
 
 
 def sanitize_obs_for_h5ad(df: pd.DataFrame) -> pd.DataFrame:
@@ -440,7 +438,6 @@ def make_multipanel_age_plots(
     fig.savefig(out, dpi=300)
     plt.close(fig)
     print(f"Gespeichert: {out}")
-    make_multipanel_age_plots(df_ops, upto=4, same_ylim=True)
 
 
 # ---  kompakte Summary-Tabellen .csv---
@@ -471,13 +468,10 @@ def write_age_summary_tables(df_ops: pd.DataFrame) -> None:
     props_piv.to_csv(out_props)
     print(f"Gespeichert: {out_counts}")
     print(f"Gespeichert: {out_props}")
-    write_age_summary_tables(df_ops)
     # --- Gestapelte Balken je Altersgruppe (AKI 0–7 vs. kein AKI) ---
 
 
 def plot_age_stacked_by_aki(df_ops: pd.DataFrame, op_index: int) -> None:
-    import matplotlib.pyplot as plt
-
     if "AKI_linked_0_7" not in df_ops.columns:
         print("AKI_linked_0_7 nicht vorhanden – übersprungen.")
         return

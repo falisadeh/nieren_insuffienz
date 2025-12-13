@@ -33,11 +33,11 @@ Pfadstruktur (aus Kontext):
 """
 
 from __future__ import annotations
+
 import os
 import re
-import math
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -54,8 +54,6 @@ except Exception:  # ehrapy ist optional – Skript läuft auch ohne
 ad.settings.allow_write_nullable_strings = (
     True  # allow writing pandas StringArray columns
 )
-
-from pathlib import Path
 
 CS_TRANSFER_DIR = cs_transfer_path()
 IN_DIR = os.path.join(CS_TRANSFER_DIR, "Original Daten")
@@ -89,6 +87,13 @@ def ensure_cols(df: pd.DataFrame, required: list[str], name: str):
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"{name}: erwartete Spalten fehlen: {missing}")
+
+
+def subset_by_patient(df: pd.DataFrame, pmid, smid) -> pd.DataFrame:
+    """Filtert Datensätze anhand von PMID und – falls vorhanden – SMID."""
+    if "SMID" in df.columns and not pd.isna(smid):
+        return df[(df["PMID"] == pmid) & (df["SMID"] == smid)]
+    return df[df["PMID"] == pmid]
 
 
 def rename_ops_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -160,12 +165,7 @@ def compute_lab_features_for_param(
         t_start = op["Surgery_Start"]
         t_end = op["Surgery_End"]
         # Kandidaten: gleiche SMID, sonst gleicher PMID
-        if not pd.isna(smid) and ("SMID" in labs_param.columns):
-            cand = labs_param[
-                (labs_param["PMID"] == pmid) & (labs_param["SMID"] == smid)
-            ]
-        else:
-            cand = labs_param[(labs_param["PMID"] == pmid)]
+        cand = subset_by_patient(labs_param, pmid, smid)
         # baseline: letzter Messwert ≤ Surgery_Start
         pre = cand[cand["CollectionTimestamp"] <= t_start].sort_values(
             "CollectionTimestamp"
@@ -222,10 +222,7 @@ def compute_vis_features(ops: pd.DataFrame, vis: pd.DataFrame) -> pd.DataFrame:
         smid = op.get("SMID", np.nan)
         t_end = op["Surgery_End"]
         # Kandidaten via SMID, sonst via PMID
-        if ("SMID" in vis.columns) and not pd.isna(smid):
-            cand = vis[(vis["PMID"] == pmid) & (vis["SMID"] == smid)].copy()
-        else:
-            cand = vis[(vis["PMID"] == pmid)].copy()
+        cand = subset_by_patient(vis, pmid, smid).copy()
         cand = cand.sort_values("Timestamp")
         # relative Stunden zu OP-Ende
         cand["rel_h"] = (cand["Timestamp"] - t_end).dt.total_seconds() / 3600.0
@@ -410,11 +407,6 @@ def main():
     # (Strings/Datetimes verbleiben in .obs; .X wird für ML/Imputation verwendet)
     # Datetime-Spalten für H5AD: in ISO-Strings wandeln, aber Kopie in .obs behalten
     obs = feats.copy()
-    datetime_cols = obs.select_dtypes(include=["datetime64[ns]"]).columns.tolist()
-    for c in datetime_cols:
-        obs[c + "_iso"] = (
-            obs[c].dt.strftime("%Y-%m-%d %H:%M:%S").where(~obs[c].isna(), other=np.nan)
-        )
 
     # .X: nur numerisch
     X_df = feats.select_dtypes(include=["number"]).copy()
@@ -454,8 +446,8 @@ def main():
     ]
     for c in dt_cols:
         s = adata.obs[c]
-        adata.obs[c] = s.dt.strftime("%Y-%m-%dT%H:%M:%S").astype("string")
-        adata.obs.loc[s.isna(), c] = pd.NA
+        formatted = s.dt.strftime("%Y-%m-%dT%H:%M:%S")
+        adata.obs[c] = formatted.where(~s.isna(), other=pd.NA).astype("string")
 
     # H5AD speichern
     adata.write_h5ad(OUT_H5AD)
